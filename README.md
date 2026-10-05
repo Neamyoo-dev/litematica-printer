@@ -62,6 +62,9 @@ Fixes included in this branch:
 - Reused scan bounds did not refresh the player's eye position. Reach checks now refresh every tick.
 - Creative material selection failed when no pick block slots were configured. It can now use the selected hotbar slot.
 - Ice for water mode skipped water placement in creative mode. Creative mode now uses normal water bucket placement.
+- Litematica's manual Easy Place hook could redirect or cancel printer clicks in the default placement mode. Printer clicks now retain their own target while manual Easy Place remains available.
+
+The debug panel shows the last scanned or processed position, not the crosshair target. Its execution flag means processing was attempted, not that the server accepted placement. Processing is now recorded before the per-tick limit stops scanning.
 
 If blocks are still missing, check:
 
