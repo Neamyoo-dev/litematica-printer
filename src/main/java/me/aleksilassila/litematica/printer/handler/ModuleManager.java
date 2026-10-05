@@ -57,6 +57,11 @@ public class ModuleManager {
         }
         lastPrinterEnabled = printerEnabled;
 
+        if (!printerEnabled || mc.player == null || mc.level == null) {
+            ActionManager.INSTANCE.clearQueue();
+            return;
+        }
+
         MissingMaterialTracker.getInstance().startCycle();
 
         if (ActionManager.INSTANCE.sendQueue(mc.player).needWaitModifyLook) {

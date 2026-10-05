@@ -5,6 +5,7 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.interfaces.Implementation;
 import me.aleksilassila.litematica.printer.printer.ActionManager;
 import me.aleksilassila.litematica.printer.printer.PlayerLook;
+import me.aleksilassila.litematica.printer.printer.PlacementGeometry;
 import me.aleksilassila.litematica.printer.utils.BlockUtils;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -38,7 +39,7 @@ public class Action {
     protected Boolean needWaitModifyLook = false;
 
     public Action() {
-        this.sides = new HashMap<>();
+        this.sides = new EnumMap<>(Direction.class);
         for (Direction direction : Direction.values()) {
             sides.put(direction, new Vec3(0, 0, 0));
         }
@@ -74,7 +75,7 @@ public class Action {
 
     public @NotNull Map<Direction, Vec3> getSides() {
         if (this.sides == null) {
-            this.sides = new HashMap<>();
+            this.sides = new EnumMap<>(Direction.class);
             for (Direction d : Direction.values()) {
                 this.sides.put(d, new Vec3(0, 0, 0));
             }
@@ -83,7 +84,7 @@ public class Action {
     }
 
     public Action setSides(Direction.Axis... axis) {
-        Map<Direction, Vec3> sides = new HashMap<>();
+        Map<Direction, Vec3> sides = new EnumMap<>(Direction.class);
         for (Direction.Axis a : axis) {
             for (Direction d : Direction.values()) {
                 if (d.getAxis() == a) {
@@ -96,12 +97,13 @@ public class Action {
     }
 
     public Action setSides(Map<Direction, Vec3> sides) {
-        this.sides = sides;
+        this.sides = new EnumMap<>(Direction.class);
+        this.sides.putAll(sides);
         return this;
     }
 
     public Action setSides(Direction... directions) {
-        Map<Direction, Vec3> sides = new HashMap<>();
+        Map<Direction, Vec3> sides = new EnumMap<>(Direction.class);
         for (Direction d : directions) {
             sides.put(d, new Vec3(0, 0, 0));
         }
@@ -115,29 +117,27 @@ public class Action {
         List<Direction> validSides = new ArrayList<>();
         for (Direction side : sides.keySet()) {
             BlockPos neighborPos = pos.relative(side);
-            BlockState neighborState = world.getBlockState(neighborPos);
-            if (Configs.Print.PLACE_IN_AIR.getBooleanValue() && !this.requiresSupport
-                // TODO: 没理解, 都凭空放置了, 还检查相邻方块类型？所以注释掉了
-                // && !Implementation.isInteractive(neighborState.getBlock())
-            ) {
-                return side;
-            }
-            if (BlockUtils.canBeClicked(world, neighborPos) && !BlockUtils.isReplaceable(neighborState)) {
+            if (hasClickableSupport(world, neighborPos)) {
                 validSides.add(side);
             }
         }
         if (validSides.isEmpty()) {
-            return null;
+            // Air placement is a fallback; a real support face is more reliable on servers.
+            return Configs.Print.PLACE_IN_AIR.getBooleanValue() && !requiresSupport
+                    ? sides.keySet().stream().findFirst().orElse(null) : null;
         }
         // 选择一个不需要潜行放置的面
         for (Direction validSide : validSides) {
-            BlockState requiredState = world.getBlockState(pos);
             BlockState sideBlockState = world.getBlockState(pos.relative(validSide));
-            if (!Implementation.isInteractive(sideBlockState.getBlock()) && requiredState.canSurvive(world, pos)) {
+            if (!Implementation.isInteractive(sideBlockState.getBlock())) {
                 return validSide;
             }
         }
         return validSides.get(0);
+    }
+
+    private boolean hasClickableSupport(ClientLevel world, BlockPos pos) {
+        return BlockUtils.canBeClicked(world, pos) && !BlockUtils.isReplaceable(world.getBlockState(pos));
     }
 
     public Action setItem(Item item) {
@@ -168,7 +168,8 @@ public class Action {
     }
 
     public Action queueAction(@NotNull BlockPos blockPos, @NotNull Direction side, boolean useShift, @NotNull LocalPlayer player) {
-        if (Configs.Print.PLACE_IN_AIR.getBooleanValue() && !this.requiresSupport) {
+        if (PlacementGeometry.useAirPlacement(Configs.Print.PLACE_IN_AIR.getBooleanValue(), requiresSupport,
+                hasClickableSupport((ClientLevel) player.level(), blockPos.relative(side)))) {
             ActionManager.INSTANCE.queueClick(
                     blockPos,
                     side.getOpposite(),

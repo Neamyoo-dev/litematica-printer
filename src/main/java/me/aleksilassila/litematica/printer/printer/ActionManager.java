@@ -50,7 +50,8 @@ public class ActionManager {
     }
 
     public ActionManager sendQueue(LocalPlayer player) {
-        if (target == null || side == null || hitModifier == null) {
+        if (player == null || Reference.MINECRAFT.level == null || Reference.MINECRAFT.gameMode == null
+                || target == null || side == null || hitModifier == null) {
             clearQueue();
             return this;
         }
@@ -80,10 +81,7 @@ public class ActionManager {
         }
         Vec3 hitVec;
         if (!useProtocol) {
-            Vec3 targetCenter = Vec3.atCenterOf(target);
-            Vec3 sideOffset = Vec3.atLowerCornerOf(BlockUtils.getVector(side)).scale(0.5);
-            Vec3 rotatedHitModifier = hitModifier.yRot((direction.toYRot() + 90) % 360).scale(0.5);
-            hitVec = targetCenter.add(sideOffset).add(rotatedHitModifier);
+            hitVec = PlacementGeometry.hitVec(target, side, hitModifier, direction);
         } else {
             hitVec = hitModifier;
         }

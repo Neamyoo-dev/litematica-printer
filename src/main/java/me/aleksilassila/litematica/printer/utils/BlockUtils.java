@@ -310,7 +310,7 @@ public class BlockUtils {
     }
 
     public static boolean canBeClicked(ClientLevel world, BlockPos pos) {
-        return getOutlineShape(world, pos) != Shapes.empty();
+        return !getOutlineShape(world, pos).isEmpty();
     }
 
     public static VoxelShape getOutlineShape(ClientLevel world, BlockPos pos) {
