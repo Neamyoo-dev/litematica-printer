@@ -19,7 +19,7 @@ body:
       label: Checklist
       description: 'Before you start feedback on this issue, check:'
       options:
-        - label: I've updated to the latest version! [Latest version number] (https://img.shields.io/github/v/release/Neamyoo-dev/litematica-printer?include_prereleases&style=flat-square&label=) and retrieved in [Issues](https://github.com/Neamyoo-dev/litematica-printer/issues?q=type%3ABug) to confirm that this bug has not been filed and that there is no solution in [FAQ](https://github.com/Neamyoo-dev/litematica-printer#%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98).
+        - label: I've tested the latest release and searched [Issues](https://github.com/Neamyoo-dev/litematica-printer/issues?q=type%3ABug) and the [troubleshooting guide](https://github.com/Neamyoo-dev/litematica-printer#why-are-blue-missing-blocks-left-unfilled) for this problem.
           required: false
         - label: I've read the options carefully and know that this option doesn't need to be checked.
           required: false
