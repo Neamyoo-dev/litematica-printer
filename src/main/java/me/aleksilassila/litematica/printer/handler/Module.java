@@ -168,6 +168,7 @@ public abstract class Module extends ConfigUtils {
                 scanState = ScanState.RUNNING;
                 if (pos != null && needsWork(pos)) {
                     executeIteration(pos, skipIteration);
+                    updateGuiInfo(pos, true);
                     execCount++;
                     if (maxExecs > 0 && execCount >= maxExecs) return;
                 }
@@ -192,19 +193,24 @@ public abstract class Module extends ConfigUtils {
                     if (!Configs.Core.CLASSIFY_BY_BLOCK.getBooleanValue() || isCycleItemMatch(pos)) {
                         executeIteration(pos, skipIteration);
                         executed = true;
-                        if (maxExecs > 0 && ++execCount >= maxExecs) return;
+                        execCount++;
                     }
                 }
 
-                currentGuiInfo = new GuiBlockInfo(pos,
-                        level.getBlockState(pos), LitematicaUtils.getBlockState(pos),
-                        PlayerUtils.canInteracted(pos), executed,
-                        isPosInWorkspace(pos) && PlayerUtils.canInteracted(pos));
+                updateGuiInfo(pos, executed);
+                if (maxExecs > 0 && execCount >= maxExecs) return;
             }
         } finally {
             if (timeoutTask != null) timeoutTask.cancel(false);
             timeLimitExceeded.set(false);
         }
+    }
+
+    private void updateGuiInfo(BlockPos pos, boolean executed) {
+        currentGuiInfo = new GuiBlockInfo(pos,
+                level.getBlockState(pos), LitematicaUtils.getBlockState(pos),
+                PlayerUtils.canInteracted(pos), executed,
+                isPosInWorkspace(pos) && PlayerUtils.canInteracted(pos));
     }
 
     private boolean isCycleItemMatch(BlockPos pos) {
