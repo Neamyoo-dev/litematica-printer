@@ -62,7 +62,7 @@ public class InventoryUtils {
 
     public static boolean playerHasAccessToItems(LocalPlayer playerEntity, Item... items) {
         if (items == null || items.length == 0) return true;
-        if (PlayerUtils.getAbilities(playerEntity).mayBuild) return true;
+        if (PlayerUtils.getAbilities(playerEntity).instabuild) return true;
         if (!playerEntity.containerMenu.equals(playerEntity.inventoryMenu)) return false;
         Inventory inventory = playerEntity.getInventory();
         for (Item item : items) {
@@ -105,6 +105,7 @@ public class InventoryUtils {
         if (Inventory.isHotbarSlot(sourceSlot)) return PickResult.SUCCESS;
         // 无配置可拾取槽位 → 精准失败类型
         if (InventoryUtilsAccessor.getPICK_BLOCKABLE_SLOTS().isEmpty()) {
+            if (player.getAbilities().instabuild) return PickResult.SUCCESS;
             return PickResult.FAIL_NO_PICK_SLOTS_CONFIGURED;
         }
         // 寻找可用槽位
@@ -129,6 +130,13 @@ public class InventoryUtils {
             return true;
         }
         if (InventoryUtilsAccessor.getPICK_BLOCKABLE_SLOTS().isEmpty()) {
+            if (player.getAbilities().instabuild) {
+                // Creative pick-block can use the selected slot without a configured survival pick slot.
+                int selectedSlot = getSelectedSlot(inventory);
+                inventory.setItem(selectedSlot, stack.copy());
+                mc.gameMode.handleCreativeModeItemAdd(player.getMainHandItem(), 36 + selectedSlot);
+                return true;
+            }
             showMessageWithCooldown(Message.MessageType.WARNING, "litematica.message.warn.pickblock.no_valid_slots_configured");
             return false;
         }

@@ -29,7 +29,7 @@ public class IteratorManager {
     private Vec3 eyePos;
     private double effectiveRange;
 
-    private BlockPos lastEyePos;
+    private PrinterBox lastScanBounds;
     private int lastExpandRange = -1;
     private int lastLayerMin = Integer.MIN_VALUE;
     private int lastLayerMax = Integer.MIN_VALUE;
@@ -57,14 +57,15 @@ public class IteratorManager {
      * 根据玩家位置和配置重建 PrinterBox，返回是否需要重置扫描状态。
      */
     public boolean tryBuildBox(LocalPlayer player, @Nullable Object selectionTypeObj) {
-        BlockPos eyeBP = new BlockPos(
-                (int) Math.round(player.getX()),
-                (int) Math.round(player.getEyeY()),
-                (int) Math.round(player.getZ())
-        );
-
         double effectiveRange = ConfigUtils.getEffectiveRange();
         int currentRange = (int) Math.ceil(effectiveRange);
+        PrinterBox scanBounds = new PrinterBox(
+                (int) Math.floor(player.getX() - effectiveRange),
+                (int) Math.floor(player.getEyeY() - effectiveRange),
+                (int) Math.floor(player.getZ() - effectiveRange),
+                (int) Math.ceil(player.getX() + effectiveRange),
+                (int) Math.ceil(player.getEyeY() + effectiveRange),
+                (int) Math.ceil(player.getZ() + effectiveRange));
 
         LayerRange layerRange = DataManager.getRenderLayerRange();
         LayerMode layerMode = layerRange.getLayerMode();
@@ -77,10 +78,14 @@ public class IteratorManager {
 
         SelectionType selectionType = selectionTypeObj instanceof SelectionType s ? s : null;
 
-        boolean needRebuild = this.box == null
+        RadiusShapeType currentShape = Configs.Core.ITERATOR_SHAPE.getOptionListValue() instanceof RadiusShapeType s ? s : null;
+        // Reach filtering must follow the player every tick, even when the scan box is reused.
+        this.eyePos = player.getEyePosition();
+        this.effectiveRange = effectiveRange;
+
+        boolean needRebuild = needsRebuild || this.box == null
                 || !this.box.equals(lastBox)
-                || lastEyePos == null
-                || !lastEyePos.closerThan(eyeBP, effectiveRange * 0.4)
+                || !scanBounds.equals(lastScanBounds)
                 || lastExpandRange != currentRange
                 || layerMin != lastLayerMin
                 || layerMax != lastLayerMax
@@ -89,10 +94,11 @@ public class IteratorManager {
                 || layerBelow != lastLayerBelow
                 || layerAxis != lastLayerAxis
                 || layerMode != lastLayerMode
-                || selectionType != lastSelectionType;
+                || selectionType != lastSelectionType
+                || currentShape != this.shapeType;
 
         if (needRebuild) {
-            lastEyePos = eyeBP;
+            lastScanBounds = scanBounds;
             lastExpandRange = currentRange;
             lastLayerMin = layerMin;
             lastLayerMax = layerMax;
@@ -160,7 +166,7 @@ public class IteratorManager {
             box.yIncrement = !Configs.Core.Y_REVERSE.getBooleanValue();
             box.zIncrement = !Configs.Core.Z_REVERSE.getBooleanValue();
 
-            this.shapeType = Configs.Core.ITERATOR_SHAPE.getOptionListValue() instanceof RadiusShapeType s ? s : null;
+            this.shapeType = currentShape;
             this.eyePos = player.getEyePosition();
             this.effectiveRange = effectiveRange;
 
