@@ -13,12 +13,12 @@ on:
   workflow_dispatch:
     inputs:
       target_subproject:
-        description: |-
-          The subproject name(s) of the specified Minecraft version to be released, seperated with ",".
-          By default all subprojects will be released
-        type: string
+        description: Minecraft version to release
+        type: choice
+        options:
+          - '26.2'
         required: false
-        default: ''
+        default: '26.2'
       target_release_tag:
         description: |-
           The tag of the release you want to append the artifact to.
@@ -128,12 +128,6 @@ jobs:
           name: single-version
           path: single-version
 
-      - name: Download versionpack artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: versionpack
-          path: versionpack
-
       - name: Get github release information
         id: get_release
         uses: cardinalby/git-get-release-action@1.2.5
@@ -162,7 +156,6 @@ jobs:
         with:
           tag_name: ${{ steps.release_info.outputs.tag_name }}
           files: |
-            versionpack/*.jar
             single-version/*.jar
           fail_on_unmatched_files: true
           draft: false

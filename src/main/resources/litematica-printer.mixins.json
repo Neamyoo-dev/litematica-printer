@@ -12,7 +12,6 @@
     "malilib.config.MixinIConfigBase",
     "mc.MixinBlockItem",
     "mc.MixinConnection",
-    "mc.MixinGui",
     "mc.MixinHud",
     "mc.ServerboundMovePlayerPacketAccessor"
   ],
@@ -23,7 +22,6 @@
     "mc.MixinClientCommonPacketListener",
     "mc.MixinClientLevel",
     "mc.MixinClientPacketListener",
-    "mc.MixinGui",
     "mc.MixinLocalPlayer",
     "mc.MixinMinecraft",
     "mc.MixinMultiPlayerGameMode"

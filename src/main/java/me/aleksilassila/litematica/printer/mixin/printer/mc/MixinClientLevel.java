@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.Shadow;
 @Mixin(ClientLevel.class)
 public abstract class MixinClientLevel implements PacketUtils.SequenceExtension {
 
-    //#if MC > 11802
     @Final
     @Shadow
     private net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler blockStatePredictionHandler;
@@ -22,5 +21,4 @@ public abstract class MixinClientLevel implements PacketUtils.SequenceExtension 
             PacketUtils.sendPacket(action.predict(prediction.currentSequence()));
         }
     }
-    //#endif
 }

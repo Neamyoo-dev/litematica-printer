@@ -37,11 +37,7 @@ public abstract class MixinMultiPlayerGameMode implements MultiPlayerGameModeExt
     @Shadow public abstract boolean destroyBlock(final BlockPos pos);
     @Shadow protected abstract boolean sameDestroyTarget(final BlockPos pos);
     @Shadow protected abstract void ensureHasSentCarriedItem();
-    //#if MC > 11802
     @Shadow public abstract InteractionResult useItemOn(LocalPlayer player, InteractionHand hand, BlockHitResult blockHitResult);
-    //#else
-    //$$ @Shadow public abstract InteractionResult useItemOn(LocalPlayer player,ClientLevel level, InteractionHand hand, BlockHitResult blockHitResult);
-    //#endif
     // @formatter:on
 
     @Inject(method = "stopDestroyBlock", at = @At("HEAD"), cancellable = true)
@@ -71,21 +67,13 @@ public abstract class MixinMultiPlayerGameMode implements MultiPlayerGameModeExt
     @Override
     public InteractionResult litematica_printer$useItemOn(boolean localPrediction, InteractionHand hand, BlockHitResult blockHit) {
         if (localPrediction) {
-            //#if MC > 11802
             return useItemOn(minecraft.player, hand, blockHit);
-            //#else
-            //$$ return useItemOn(minecraft.player, minecraft.level, hand, blockHit);
-            //#endif
         }
         this.ensureHasSentCarriedItem();
         if (!this.minecraft.level.getWorldBorder().isWithinBounds(blockHit.getBlockPos())) {
             return InteractionResult.FAIL;
         }
-        //#if MC > 11802
         litematica_printer$startPrediction((sequence) -> new ServerboundUseItemOnPacket(hand, blockHit, sequence));
-        //#else
-        //$$ litematica_printer$startPrediction((sequence) -> new ServerboundUseItemOnPacket(hand, blockHit));
-        //#endif
         return InteractionResult.PASS;
     }
 
@@ -108,11 +96,7 @@ public abstract class MixinMultiPlayerGameMode implements MultiPlayerGameModeExt
 
     @Unique
     private ServerboundPlayerActionPacket litematica_printer$GetServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action action, BlockPos blockPos, Direction direction, int sequence) {
-        //#if MC > 11802
         return new ServerboundPlayerActionPacket(action, blockPos, direction, sequence);
-        //#else
-        //$$ return new ServerboundPlayerActionPacket(action, blockPos, direction);
-        //#endif
     }
 
     /**
@@ -196,11 +180,7 @@ public abstract class MixinMultiPlayerGameMode implements MultiPlayerGameModeExt
 
     @Override
     public BlockBreakResult litematica_printer$continueDestroyBlock(boolean requestedPrediction, BlockPos blockPos, Direction direction) {
-        //#if MC > 11802
         boolean localPrediction = requestedPrediction;
-        //#else
-        //$$ boolean localPrediction = false; // 旧版自定义挖掘不参与原版预测回滚，等待服务端更新
-        //#endif
         LocalPlayer player = minecraft.player;
         ClientLevel level = minecraft.level;
         MultiPlayerGameMode gameMode = minecraft.gameMode;

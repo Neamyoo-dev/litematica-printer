@@ -16,12 +16,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-//#if MC > 12105
 import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
 import net.minecraft.world.entity.player.Input;
-//#else
-//$$ import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
-//#endif
 
 public class ActionManager {
     public static final ActionManager INSTANCE = new ActionManager();
@@ -117,12 +113,8 @@ public class ActionManager {
     }
 
     public void setShift(LocalPlayer player, boolean shift) {
-        //#if MC > 12105
         Input input = new Input(player.input.keyPresses.forward(), player.input.keyPresses.backward(), player.input.keyPresses.left(), player.input.keyPresses.right(), player.input.keyPresses.jump(), shift, player.input.keyPresses.sprint());
         ServerboundPlayerInputPacket packet = new ServerboundPlayerInputPacket(input);
-        //#else
-        //$$ ServerboundPlayerCommandPacket packet = new ServerboundPlayerCommandPacket(player, shift ? ServerboundPlayerCommandPacket.Action.PRESS_SHIFT_KEY : ServerboundPlayerCommandPacket.Action.RELEASE_SHIFT_KEY);
-        //#endif
         player.setShiftKeyDown(shift);
         PacketUtils.sendPacket(packet);
     }

@@ -6,11 +6,7 @@ import me.aleksilassila.litematica.printer.config.ConfigOptionListEntry;
 public enum ShulkerSource implements ConfigOptionListEntry<ShulkerSource> {
     MOD("shulkerSource.mod"),
     PLUGIN("shulkerSource.plugin"),
-    //#if MC >= 260102
     TAKE_IT_OUT("shulkerSource.takeItOut");
-    //#else
-    //$$ ;
-    //#endif
 
     private final I18n i18n;
 

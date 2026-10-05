@@ -37,10 +37,5 @@
   },
   "suggests": {
     "remote-inventory-next": ">=1.0.0"
-  },
-  "custom": {
-    "modmenu": {
-      "parent": "${mod_wrapper_id}"
-    }
   }
 }

@@ -7,10 +7,10 @@ on:
         required: false
         default: snapshot
       target_subproject:
-        description: See release.yml, leave it empty to build all
+        description: Minecraft 26.2 subproject
         type: string
         required: false
-        default: ''
+        default: '26.2'
       download_dependencies:
         description: Download dependencies
         type: boolean
@@ -85,25 +85,13 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: build-artifacts
-          path: versions/*/build/libs/
-
-      - name: Upload versionpack artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: versionpack
-          path: fabricWrapper/build/libs/
-
-      - name: Upload multi-version artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          path: fabricWrapper/build/libs/*.jar
-          archive: false
+          path: versions/26.2/build/libs/
 
       - name: Collect mod artifacts
         run: |
           shopt -s extglob
           mkdir mod-jars
-          for jar in versions/*/build/libs/!(*-@(dev|sources|shadow)).jar; do
+          for jar in versions/26.2/build/libs/!(*-@(dev|sources|shadow)).jar; do
               cp -p "$jar" mod-jars/
           done
           sha256sum mod-jars/*

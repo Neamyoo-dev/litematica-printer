@@ -4,9 +4,6 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.systems.RenderSystem;
-//#if MC < 260200
-import com.mojang.blaze3d.vertex.Tesselator;
-//#endif
 import fi.dy.masa.malilib.interfaces.IRenderer;
 import me.aleksilassila.litematica.printer.Reference;
 import me.aleksilassila.litematica.printer.config.Configs;
@@ -25,104 +22,39 @@ import java.util.Queue;
 
 import org.joml.Matrix4f;
 
-// MC >= 1.21.5: MaLiLibPipelines + RenderContext (malilib >= 0.24.3)
-// MC >= 1.21.1: MeshData, BufferUploader (new Tesselator/BufferBuilder API)
-// MC < 1.21.1: Old Tesselator API (getBuilder, end, vertex)
-
-//#if MC >= 12101
 import com.mojang.blaze3d.vertex.MeshData;
-//#endif
-//#if MC >= 12101 && MC < 12105
-//$$ import com.mojang.blaze3d.vertex.BufferUploader;
-//#endif
-//#if MC >= 12105
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import fi.dy.masa.malilib.render.MaLiLibPipelines;
 import fi.dy.masa.malilib.render.RenderContext;
-//#endif
-//#if MC >= 12108
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.RenderBuffers;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.util.profiling.ProfilerFiller;
-//#endif
-//#if MC >= 260100
-//$$ import com.mojang.blaze3d.buffers.GpuBufferSlice;
-//$$ import net.minecraft.client.renderer.state.level.CameraRenderState;
-//$$ import org.joml.Matrix4fc;
-//$$ import org.joml.Vector4f;
-//#endif
-//#if MC < 12006
-//$$ import com.mojang.blaze3d.vertex.PoseStack;
-//#endif
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import org.joml.Matrix4fc;
+import org.joml.Vector4f;
 
 public class BlockHighlightRenderer implements IRenderer {
 
     // ===== Render Entry Points =====
 
-    //#if MC >= 260300
-    //$$ @Override
-    //$$ public void onRenderWorldLast(
-    //$$         RenderTarget renderTarget,
-    //$$         CameraRenderState cameraRenderState,
-    //$$         Frustum frustum,
-    //$$         RenderBuffers renderBuffers,
-    //$$         GpuBufferSlice gpuBufferSlice,
-    //$$         Vector4f vector4f,
-    //$$         ProfilerFiller profiler
-    //$$ ) {
-    //$$     renderInternal(cameraRenderState.pos);
-    //$$ }
-    //#elseif MC >= 260100
-    //$$ @Override
-    //$$ public void onRenderWorldLast(
-    //$$         RenderTarget renderTarget,
-    //$$         //#if MC < 260300
-    //$$         Matrix4fc projMatrix,
-    //$$         //#endif
-    //$$         CameraRenderState cameraRenderState,
-    //$$         Frustum frustum,
-    //$$         RenderBuffers renderBuffers,
-    //$$         GpuBufferSlice gpuBufferSlice,
-    //$$         Vector4f vector4f,
-    //$$         ProfilerFiller profiler
-    //$$ ) {
-    //$$     renderInternal(cameraRenderState.pos);
-    //$$ }
-    //#elseif MC >= 12108
     @Override
-    public void onRenderWorldLastAdvanced(
+    public void onRenderWorldLast(
             RenderTarget renderTarget,
-            Matrix4f posMatrix,
-            Matrix4f projMatrix,
+            Matrix4fc projMatrix,
+            CameraRenderState cameraRenderState,
             Frustum frustum,
-            Camera camera,
-            RenderBuffers buffers,
+            RenderBuffers renderBuffers,
+            GpuBufferSlice gpuBufferSlice,
+            Vector4f vector4f,
             ProfilerFiller profiler
     ) {
-        renderInternal(camera.position());
+        renderInternal(cameraRenderState.pos);
     }
-    //#elseif MC >= 12006
-    //$$ @Override
-    //$$ public void onRenderWorldLast(Matrix4f posMatrix, Matrix4f projMatrix) {
-    //$$     renderInternal(getRenderCameraPos());
-    //$$ }
-    //#endif
-    //#if MC < 12006
-    //$$ @Override
-    //$$ public void onRenderWorldLast(PoseStack poseStack, Matrix4f projMatrix) {
-    //$$     renderInternal(getRenderCameraPos());
-    //$$ }
-    //#endif
 
     /** Match malilib's camPos() pattern: rendering camera, not player eye */
-    //#if MC < 12108
-    //$$ private static Vec3 getRenderCameraPos() {
-    //$$     var cam = Minecraft.getInstance().gameRenderer.getMainCamera();
-    //$$     return cam != null ? cam.getPosition() : Vec3.ZERO;
-    //$$ }
-    //#endif
 
     // ===== Shared Render Logic =====
 
@@ -182,47 +114,24 @@ public class BlockHighlightRenderer implements IRenderer {
             entries.sort(Comparator.comparingDouble(e -> -e.distSq));
         }
 
-        //#if MC >= 12105
         drawWithMaLiLib(cameraPos, entries, seeThrough, hasOutline, hasFilled);
-        //#elseif MC >= 12101
-        //$$ drawDirect(cameraPos, entries, seeThrough, hasOutline, hasFilled);
-        //#else
-        //$$ drawLegacy(cameraPos, entries, seeThrough, hasOutline, hasFilled);
-        //#endif
     }
 
     // ===== Modern path: MC >= 1.21.5 (MaLiLibPipelines + RenderContext) =====
 
-    //#if MC >= 12105
     private void drawWithMaLiLib(Vec3 cameraPos, List<HighlightEntry> entries,
                                  boolean seeThrough, boolean hasOutline, boolean hasFilled) {
         RenderPipeline linePipeline = seeThrough
                 ? MaLiLibPipelines.DEBUG_LINES_MASA_SIMPLE_NO_DEPTH_NO_CULL
                 : MaLiLibPipelines.DEBUG_LINES_MASA_SIMPLE_LEQUAL_DEPTH;
-        //#if MC >= 12108
         RenderPipeline filledPipeline = seeThrough
                 ? MaLiLibPipelines.POSITION_COLOR_TRANSLUCENT_NO_DEPTH_NO_CULL
                 : MaLiLibPipelines.POSITION_COLOR_TRANSLUCENT_LEQUAL_DEPTH_NO_CULL;
-        //#else
-        //$$ RenderPipeline filledPipeline = seeThrough
-        //$$         ? MaLiLibPipelines.POSITION_COLOR_TRANSLUCENT_NO_DEPTH_NO_CULL
-        //$$         : MaLiLibPipelines.POSITION_COLOR_TRANSLUCENT_LEQUAL_DEPTH;
-        //#endif
 
-        //#if MC >= 260200
-        //$$ RenderContext ctx = new RenderContext(() -> "litematica_printer:highlight", linePipeline, 0);
-        //#elseif MC >= 12105 && MC < 12108
-        //$$ RenderContext ctx = new RenderContext(linePipeline);
-        //#else
-        RenderContext ctx = new RenderContext(() -> "litematica_printer:highlight", linePipeline);
-        //#endif
+        RenderContext ctx = new RenderContext(() -> "litematica_printer:highlight", linePipeline, 0);
         try {
             if (hasOutline) {
-                //#if MC >= 260200
-                //$$ ctx.start(() -> "highlight_outline", linePipeline, 0);
-                //#elseif MC >= 12108
-                ctx.start(() -> "highlight_outline", linePipeline);
-                //#endif
+                ctx.start(() -> "highlight_outline", linePipeline, 0);
                 BufferBuilder lineBuf = ctx.getBuilder();
                 for (HighlightEntry e : entries) {
                     if (e.style == HighlightStyleType.FILLED) continue;
@@ -237,13 +146,7 @@ public class BlockHighlightRenderer implements IRenderer {
             }
 
             if (hasFilled) {
-                //#if MC >= 260200
-                //$$ BufferBuilder filledBuf = ctx.start(() -> "highlight_filled", filledPipeline, 0);
-                //#elseif MC >= 12108
-                BufferBuilder filledBuf = ctx.start(() -> "highlight_filled", filledPipeline);
-                //#else
-                //$$ BufferBuilder filledBuf = ctx.start(filledPipeline);
-                //#endif
+                BufferBuilder filledBuf = ctx.start(() -> "highlight_filled", filledPipeline, 0);
                 for (HighlightEntry e : entries) {
                     if (e.style == HighlightStyleType.OUTLINE) continue;
                     addFilledBoxModern(filledBuf, e.pos, e.r, e.g, e.b, (int)(e.alpha * 255), cameraPos);
@@ -311,231 +214,17 @@ public class BlockHighlightRenderer implements IRenderer {
         line(buf, x1, y1, z2, x1, y2, z2, r, g, b, a);
     }
 
-    //#if MC >= 12111
     private void line(BufferBuilder buf, float x1, float y1, float z1,
                       float x2, float y2, float z2, int r, int g, int b, int a) {
         buf.addVertex(x1, y1, z1).setColor(r, g, b, a).setLineWidth(1.0f);
         buf.addVertex(x2, y2, z2).setColor(r, g, b, a).setLineWidth(1.0f);
     }
-    //#else
-    //$$ private void line(BufferBuilder buf, float x1, float y1, float z1,
-    //$$                   float x2, float y2, float z2, int r, int g, int b, int a) {
-    //$$     buf.addVertex(x1, y1, z1).setColor(r, g, b, a);
-    //$$     buf.addVertex(x2, y2, z2).setColor(r, g, b, a);
-    //$$ }
-    //#endif
-    //#endif
 
     // ===== Intermediate path: MC >= 1.21.1 && < 1.21.5 (direct BufferUploader) =====
 
-    //#if MC >= 12101 && MC < 12105
-    //$$ private void drawDirect(Vec3 cameraPos, List<HighlightEntry> entries,
-    //$$                         boolean seeThrough, boolean hasOutline, boolean hasFilled) {
-    //$$
-    //$$     try {
-    //$$         if (hasOutline) {
-    //$$             BufferBuilder buf = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-    //$$             for (HighlightEntry e : entries) {
-    //$$                 if (e.style == HighlightStyleType.FILLED) continue;
-    //$$                 addOutlineBoxDirect(buf, e.pos, e.r, e.g, e.b, (int)(e.alpha * 255), cameraPos);
-    //$$             }
-    //$$             MeshData mesh = buf.build();
-    //$$             if (mesh != null) {
-    //$$                 if (seeThrough) RenderSystem.disableDepthTest();
-    //$$                 RenderSystem.enableBlend();
-    //$$                 RenderSystem.defaultBlendFunc();
-    //$$                 BufferUploader.drawWithShader(mesh);
-    //$$                 RenderSystem.disableBlend();
-    //$$                 if (seeThrough) RenderSystem.enableDepthTest();
-    //$$                 mesh.close();
-    //$$             }
-    //$$         }
-    //$$
-    //$$         if (hasFilled) {
-    //$$             BufferBuilder buf = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-    //$$             for (HighlightEntry e : entries) {
-    //$$                 if (e.style == HighlightStyleType.OUTLINE) continue;
-    //$$                 addFilledBoxDirect(buf, e.pos, e.r, e.g, e.b, (int)(e.alpha * 255), cameraPos);
-    //$$             }
-    //$$             MeshData mesh = buf.build();
-    //$$             if (mesh != null) {
-    //$$                 if (seeThrough) RenderSystem.disableDepthTest();
-    //$$                 RenderSystem.enableBlend();
-    //$$                 RenderSystem.defaultBlendFunc();
-    //$$                 BufferUploader.drawWithShader(mesh);
-    //$$                 RenderSystem.disableBlend();
-    //$$                 if (seeThrough) RenderSystem.enableDepthTest();
-    //$$                 mesh.close();
-    //$$             }
-    //$$         }
-    //$$     } catch (Exception e) {
-    //$$         Reference.LOGGER.error("BlockHighlight: drawDirect exception: {}", e.getMessage());
-    //$$     }
-    //$$ }
-    //$$
-    //$$ private void addFilledBoxDirect(BufferBuilder buf, BlockPos pos,
-    //$$                                 int r, int g, int b, int a, Vec3 cameraPos) {
-    //$$     float x1 = (float) (pos.getX() - cameraPos.x - 0.001);
-    //$$     float y1 = (float) (pos.getY() - cameraPos.y - 0.001);
-    //$$     float z1 = (float) (pos.getZ() - cameraPos.z - 0.001);
-    //$$     float x2 = (float) (pos.getX() - cameraPos.x + 1 + 0.001);
-    //$$     float y2 = (float) (pos.getY() - cameraPos.y + 1 + 0.001);
-    //$$     float z2 = (float) (pos.getZ() - cameraPos.z + 1 + 0.001);
-    //$$
-    //$$     triDirect(buf, x1, y1, z1, x2, y1, z1, x2, y1, z2, r, g, b, a);
-    //$$     triDirect(buf, x1, y1, z1, x2, y1, z2, x1, y1, z2, r, g, b, a);
-    //$$     triDirect(buf, x1, y2, z1, x1, y2, z2, x2, y2, z2, r, g, b, a);
-    //$$     triDirect(buf, x1, y2, z1, x2, y2, z2, x2, y2, z1, r, g, b, a);
-    //$$     triDirect(buf, x1, y1, z1, x1, y2, z1, x2, y2, z1, r, g, b, a);
-    //$$     triDirect(buf, x1, y1, z1, x2, y2, z1, x2, y1, z1, r, g, b, a);
-    //$$     triDirect(buf, x1, y1, z2, x2, y1, z2, x2, y2, z2, r, g, b, a);
-    //$$     triDirect(buf, x1, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
-    //$$     triDirect(buf, x1, y1, z1, x1, y1, z2, x1, y2, z2, r, g, b, a);
-    //$$     triDirect(buf, x1, y1, z1, x1, y2, z2, x1, y2, z1, r, g, b, a);
-    //$$     triDirect(buf, x2, y1, z1, x2, y2, z1, x2, y2, z2, r, g, b, a);
-    //$$     triDirect(buf, x2, y1, z1, x2, y2, z2, x2, y1, z2, r, g, b, a);
-    //$$ }
-    //$$
-    //$$ private void triDirect(BufferBuilder buf, float x1, float y1, float z1,
-    //$$                        float x2, float y2, float z2, float x3, float y3, float z3,
-    //$$                        int r, int g, int b, int a) {
-    //$$     buf.addVertex(x1, y1, z1).setColor(r, g, b, a);
-    //$$     buf.addVertex(x2, y2, z2).setColor(r, g, b, a);
-    //$$     buf.addVertex(x3, y3, z3).setColor(r, g, b, a);
-    //$$ }
-    //$$
-    //$$ private void addOutlineBoxDirect(BufferBuilder buf, BlockPos pos,
-    //$$                                  int r, int g, int b, int a, Vec3 cameraPos) {
-    //$$     float x1 = (float) (pos.getX() - cameraPos.x );
-    //$$     float y1 = (float) (pos.getY() - cameraPos.y );
-    //$$     float z1 = (float) (pos.getZ() - cameraPos.z );
-    //$$     float x2 = (float) (pos.getX() - cameraPos.x + 1 );
-    //$$     float y2 = (float) (pos.getY() - cameraPos.y + 1 );
-    //$$     float z2 = (float) (pos.getZ() - cameraPos.z + 1 );
-    //$$
-    //$$     edge3Direct(buf, x1, y1, z1, x2, y1, z1, r, g, b, a);
-    //$$     edge3Direct(buf, x2, y1, z1, x2, y1, z2, r, g, b, a);
-    //$$     edge3Direct(buf, x2, y1, z2, x1, y1, z2, r, g, b, a);
-    //$$     edge3Direct(buf, x1, y1, z2, x1, y1, z1, r, g, b, a);
-    //$$     edge3Direct(buf, x1, y2, z1, x2, y2, z1, r, g, b, a);
-    //$$     edge3Direct(buf, x2, y2, z1, x2, y2, z2, r, g, b, a);
-    //$$     edge3Direct(buf, x2, y2, z2, x1, y2, z2, r, g, b, a);
-    //$$     edge3Direct(buf, x1, y2, z2, x1, y2, z1, r, g, b, a);
-    //$$     edge3Direct(buf, x1, y1, z1, x1, y2, z1, r, g, b, a);
-    //$$     edge3Direct(buf, x2, y1, z1, x2, y2, z1, r, g, b, a);
-    //$$     edge3Direct(buf, x2, y1, z2, x2, y2, z2, r, g, b, a);
-    //$$     edge3Direct(buf, x1, y1, z2, x1, y2, z2, r, g, b, a);
-    //$$ }
-    //$$
-    //$$ private void edge3Direct(BufferBuilder buf, float x1, float y1, float z1,
-    //$$                           float x2, float y2, float z2, int r, int g, int b, int a) {
-    //$$     buf.addVertex(x1, y1, z1).setColor(r, g, b, a);
-    //$$     buf.addVertex(x2, y2, z2).setColor(r, g, b, a);
-    //$$ }
-    //#endif
 
     // ===== Legacy path: MC < 1.21.1 (old Tesselator API) =====
 
-    //#if MC < 12101
-    //$$ private void drawLegacy(Vec3 cameraPos, List<HighlightEntry> entries,
-    //$$                         boolean seeThrough, boolean hasOutline, boolean hasFilled) {
-    //$$
-    //$$     Tesselator tesselator = Tesselator.getInstance();
-    //$$     BufferBuilder buf = tesselator.getBuilder();
-    //$$
-    //$$     try {
-    //$$         if (hasOutline) {
-    //$$             buf.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
-    //$$             for (HighlightEntry e : entries) {
-    //$$                 if (e.style == HighlightStyleType.FILLED) continue;
-    //$$                 addOutlineBoxLegacy(buf, e.pos, e.r, e.g, e.b, (int)(e.alpha * 255), cameraPos);
-    //$$             }
-    //$$             if (seeThrough) RenderSystem.disableDepthTest();
-    //$$             RenderSystem.enableBlend();
-    //$$             RenderSystem.defaultBlendFunc();
-    //$$             tesselator.end();
-    //$$             RenderSystem.disableBlend();
-    //$$             if (seeThrough) RenderSystem.enableDepthTest();
-    //$$         }
-    //$$
-    //$$         if (hasFilled) {
-    //$$             buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-    //$$             for (HighlightEntry e : entries) {
-    //$$                 if (e.style == HighlightStyleType.OUTLINE) continue;
-    //$$                 addFilledBoxLegacy(buf, e.pos, e.r, e.g, e.b, (int)(e.alpha * 255), cameraPos);
-    //$$             }
-    //$$             if (seeThrough) RenderSystem.disableDepthTest();
-    //$$             RenderSystem.enableBlend();
-    //$$             RenderSystem.defaultBlendFunc();
-    //$$             tesselator.end();
-    //$$             RenderSystem.disableBlend();
-    //$$             if (seeThrough) RenderSystem.enableDepthTest();
-    //$$         }
-    //$$     } catch (Exception e) {
-    //$$         Reference.LOGGER.error("BlockHighlight: drawLegacy exception: {}", e.getMessage());
-    //$$     }
-    //$$ }
-    //$$
-    //$$ private void addFilledBoxLegacy(BufferBuilder buf, BlockPos pos,
-    //$$                                 int r, int g, int b, int a, Vec3 cameraPos) {
-    //$$     float x1 = (float) (pos.getX() - cameraPos.x - 0.001);
-    //$$     float y1 = (float) (pos.getY() - cameraPos.y - 0.001);
-    //$$     float z1 = (float) (pos.getZ() - cameraPos.z - 0.001);
-    //$$     float x2 = (float) (pos.getX() - cameraPos.x + 1 + 0.001);
-    //$$     float y2 = (float) (pos.getY() - cameraPos.y + 1 + 0.001);
-    //$$     float z2 = (float) (pos.getZ() - cameraPos.z + 1 + 0.001);
-    //$$
-    //$$     triLegacy(buf, x1, y1, z1, x2, y1, z1, x2, y1, z2, r, g, b, a);
-    //$$     triLegacy(buf, x1, y1, z1, x2, y1, z2, x1, y1, z2, r, g, b, a);
-    //$$     triLegacy(buf, x1, y2, z1, x1, y2, z2, x2, y2, z2, r, g, b, a);
-    //$$     triLegacy(buf, x1, y2, z1, x2, y2, z2, x2, y2, z1, r, g, b, a);
-    //$$     triLegacy(buf, x1, y1, z1, x1, y2, z1, x2, y2, z1, r, g, b, a);
-    //$$     triLegacy(buf, x1, y1, z1, x2, y2, z1, x2, y1, z1, r, g, b, a);
-    //$$     triLegacy(buf, x1, y1, z2, x2, y1, z2, x2, y2, z2, r, g, b, a);
-    //$$     triLegacy(buf, x1, y1, z2, x2, y2, z2, x1, y2, z2, r, g, b, a);
-    //$$     triLegacy(buf, x1, y1, z1, x1, y1, z2, x1, y2, z2, r, g, b, a);
-    //$$     triLegacy(buf, x1, y1, z1, x1, y2, z2, x1, y2, z1, r, g, b, a);
-    //$$     triLegacy(buf, x2, y1, z1, x2, y2, z1, x2, y2, z2, r, g, b, a);
-    //$$     triLegacy(buf, x2, y1, z1, x2, y2, z2, x2, y1, z2, r, g, b, a);
-    //$$ }
-    //$$
-    //$$ private void triLegacy(BufferBuilder buf, float x1, float y1, float z1,
-    //$$                        float x2, float y2, float z2, float x3, float y3, float z3,
-    //$$                        int r, int g, int b, int a) {
-    //$$     buf.vertex(x1, y1, z1).color(r, g, b, a).endVertex();
-    //$$     buf.vertex(x2, y2, z2).color(r, g, b, a).endVertex();
-    //$$     buf.vertex(x3, y3, z3).color(r, g, b, a).endVertex();
-    //$$ }
-    //$$
-    //$$ private void addOutlineBoxLegacy(BufferBuilder buf, BlockPos pos,
-    //$$                                  int r, int g, int b, int a, Vec3 cameraPos) {
-    //$$     float x1 = (float) (pos.getX() - cameraPos.x );
-    //$$     float y1 = (float) (pos.getY() - cameraPos.y );
-    //$$     float z1 = (float) (pos.getZ() - cameraPos.z );
-    //$$     float x2 = (float) (pos.getX() - cameraPos.x + 1 );
-    //$$     float y2 = (float) (pos.getY() - cameraPos.y + 1 );
-    //$$     float z2 = (float) (pos.getZ() - cameraPos.z + 1 );
-    //$$
-    //$$     edge3Legacy(buf, x1, y1, z1, x2, y1, z1, r, g, b, a);
-    //$$     edge3Legacy(buf, x2, y1, z1, x2, y1, z2, r, g, b, a);
-    //$$     edge3Legacy(buf, x2, y1, z2, x1, y1, z2, r, g, b, a);
-    //$$     edge3Legacy(buf, x1, y1, z2, x1, y1, z1, r, g, b, a);
-    //$$     edge3Legacy(buf, x1, y2, z1, x2, y2, z1, r, g, b, a);
-    //$$     edge3Legacy(buf, x2, y2, z1, x2, y2, z2, r, g, b, a);
-    //$$     edge3Legacy(buf, x2, y2, z2, x1, y2, z2, r, g, b, a);
-    //$$     edge3Legacy(buf, x1, y2, z2, x1, y2, z1, r, g, b, a);
-    //$$     edge3Legacy(buf, x1, y1, z1, x1, y2, z1, r, g, b, a);
-    //$$     edge3Legacy(buf, x2, y1, z1, x2, y2, z1, r, g, b, a);
-    //$$     edge3Legacy(buf, x2, y1, z2, x2, y2, z2, r, g, b, a);
-    //$$     edge3Legacy(buf, x1, y1, z2, x1, y2, z2, r, g, b, a);
-    //$$ }
-    //$$
-    //$$ private void edge3Legacy(BufferBuilder buf, float x1, float y1, float z1,
-    //$$                           float x2, float y2, float z2, int r, int g, int b, int a) {
-    //$$     buf.vertex(x1, y1, z1).color(r, g, b, a).endVertex();
-    //$$     buf.vertex(x2, y2, z2).color(r, g, b, a).endVertex();
-    //$$ }
-    //#endif
 
     // ===== Shared Helpers =====
 

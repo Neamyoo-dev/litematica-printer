@@ -18,9 +18,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
-//#if MC >= 260300
-//$$ import net.minecraft.world.level.block.entity.SignTextSlot;
-//#endif
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -46,15 +43,9 @@ public class MixinLocalPlayer extends AbstractClientPlayer {
     @Unique
     private static boolean updateChecked;
 
-    //#if MC == 11902
-    //$$ public MixinLocalPlayer(ClientLevel world, GameProfile profile, @Nullable PlayerPublicKey publicKey) {
-    //$$    super(world, profile, publicKey);
-    //$$ }
-    //#else
     public MixinLocalPlayer(ClientLevel world, GameProfile profile) {
         super(world, profile);
     }
-    //#endif
 
     @Inject(at = @At("HEAD"), method = "resetPos")
     public void init(CallbackInfo ci) {
@@ -76,50 +67,24 @@ public class MixinLocalPlayer extends AbstractClientPlayer {
     }
 
     @Inject(method = "openTextEdit", at = @At("HEAD"), cancellable = true)
-    //#if MC >= 260300
-    //$$ public void openTextEdit(SignBlockEntity sign, SignTextSlot slot, CallbackInfo ci) {
-    //$$     openEditSignScreen(sign, slot == SignTextSlot.FRONT, ci);
-    //$$ }
-    //#elseif MC > 11904
     public void openTextEdit(SignBlockEntity sign, boolean front, CallbackInfo ci) {
         openEditSignScreen(sign, front, ci);
     }
-    //#else
-    //$$ public void openTextEdit(SignBlockEntity sign, CallbackInfo ci) {
-    //$$    openEditSignScreen(sign, false, ci);
-    //$$ }
-    //#endif
 
     public void openEditSignScreen(SignBlockEntity sign, boolean front, CallbackInfo ci) {
         getTargetSignEntity(sign).ifPresent(signBlockEntity ->
         {
-            //#if MC >= 260300
-            //$$ SignTextSlot slot = front ? SignTextSlot.FRONT : SignTextSlot.BACK;
-            //$$ List<String> lines = signBlockEntity.getText(slot).getMessages(false).stream()
-            //$$         .map(net.minecraft.network.chat.Component::getString).toList();
-            //$$ ServerboundSignUpdatePacket packet = new ServerboundSignUpdatePacket(sign.getBlockPos(), lines, slot);
-            //#else
-            //#if MC > 11904
             String line1 = signBlockEntity.getText(front).getMessage(0, false).getString();
             String line2 = signBlockEntity.getText(front).getMessage(1, false).getString();
             String line3 = signBlockEntity.getText(front).getMessage(2, false).getString();
             String line4 = signBlockEntity.getText(front).getMessage(3, false).getString();
-            //#else
-            //$$ String line1 = signBlockEntity.getMessage(0, false).getString();
-            //$$ String line2 = signBlockEntity.getMessage(1, false).getString();
-            //$$ String line3 = signBlockEntity.getMessage(2, false).getString();
-            //$$ String line4 = signBlockEntity.getMessage(3, false).getString();
-            //#endif
             ServerboundSignUpdatePacket packet = new ServerboundSignUpdatePacket(sign.getBlockPos(),
-                    //#if MC > 11904
                     front,
-                    //#endif
                     line1,
                     line2,
                     line3,
                     line4
             );
-            //#endif
             this.connection.send(packet);
             ci.cancel();
         });

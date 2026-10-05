@@ -143,13 +143,7 @@ public class Fill extends Module {
             if (!InventoryUtils.switchToItems(player, this.fillModeItemList)) {
                 if (this.fillModeItemList != null && this.fillModeItemList.length > 0 && this.fillModeItemList[0] != null) {
                     MissingMaterialTracker.getInstance().recordMissing(this.fillModeItemList[0],
-                            //#if MC >= 260100
-                            //$$ this.fillModeItemList[0].getName(this.fillModeItemList[0].getDefaultInstance())
-                            //#elseif MC > 12101
-                            this.fillModeItemList[0].getName()
-                            //#else
-                            //$$ this.fillModeItemList[0].getDescription()
-                            //#endif
+                            this.fillModeItemList[0].getName(this.fillModeItemList[0].getDefaultInstance())
                     );
                 }
                 return;

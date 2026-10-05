@@ -33,19 +33,11 @@ public class ModUtils {
     }
 
     public static boolean isBedrockMinerLoaded() {
-        //#if MC >= 11900
         return isLoadMod("bedrockminer");
-        //#else
-        //$$ return false;
-        //#endif
     }
 
     public static boolean isBlockMinerLoaded() {
-        //#if MC >= 11605
         return isLoadMod("blockminer");
-        //#else
-        //$$ return false;
-        //#endif
     }
 
     public static boolean isTweakerooLoaded() {
@@ -189,7 +181,7 @@ public class ModUtils {
      */
     private static String getLatestPrinterVersion(boolean isBeta) {
         try {
-            URI uri = URI.create("https://api.github.com/repos/BiliXWhite/litematica-printer/releases");
+            URI uri = URI.create("https://api.github.com/repos/Neamyoo-dev/litematica-printer/releases");
             HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(5000);

@@ -1,10 +1,21 @@
 @file:Suppress("UnstableApiUsage")
 
+import java.util.zip.ZipFile
+
 plugins {
     id("mod-plugin")
     id("maven-publish")
     id("net.fabricmc.fabric-loom")
-    id("com.replaymod.preprocess")
+}
+
+sourceSets {
+    main {
+        java.setSrcDirs(listOf(rootProject.file("src/main/java")))
+        resources.setSrcDirs(listOf(rootProject.file("src/main/resources")))
+    }
+    test {
+        java.setSrcDirs(listOf(rootProject.file("src/test/java")))
+    }
 }
 
 version = fullProjectVersion
@@ -25,13 +36,6 @@ repositories {
     maven("https://masa.dy.fi/maven/sakura-ryoko") { name = "SakuraRyoko" }
     maven("https://maven.kyrptonaught.dev") { name = "Kyrptonaught" }
     maven("https://jitpack.io") { name = "Jitpack" }
-    maven("https://maven.pkg.github.com/BiliXWhite/remote-inventory-next") {
-        name = "GitHub"
-        credentials {
-            username = System.getenv("GH_USERNAME") ?: ""
-            password = System.getenv("GH_TOKEN") ?: ""
-        }
-    }
 }
 
 // 锁定依赖版本防冲突
@@ -52,19 +56,26 @@ dependencies {
     implementation("com.belerweb:pinyin4j:${prop("pinyin_version")}")?.let { include(it) }
     implementation("com.terraformersmc:modmenu:${prop("modmenu")}")
 
-    // 远程容器
-    // 允许单独覆盖远程容器所对应的 MC 版本后缀（部分 MC 版本暂无对应构建时，可复用相邻版本的构建）
-    val remoteInventoryMcSuffix = propOrNull("remote_inventory_mc_suffix")?.toString() ?: mcVersion
-    implementation("dev.blinkwhite.remoteinventory:remote-inventory-next:${prop("remote_inventory_version")}+${remoteInventoryMcSuffix}")
+    // Use the public release's 26.2 jar so building does not require upstream GitHub Packages credentials.
+    val remoteVersion = prop("remote_inventory_version").toString()
+    val remoteJarName = "remote-inventory-next-mc26.2-$remoteVersion.jar"
+    val remoteJar = rootProject.file("libs/$remoteJarName")
+    if (!remoteJar.exists()) {
+        val releaseJar = downloadDependencyMod(
+            "https://github.com/BiliXWhite/remote-inventory-next/releases/download/$remoteVersion/remote-inventory-next-multi-$remoteVersion.jar"
+        ) ?: throw GradleException("Unable to download Remote Inventory Next $remoteVersion")
+        ZipFile(releaseJar).use { zip ->
+            val entry = zip.getEntry("META-INF/jars/$remoteJarName")
+                ?: throw GradleException("Remote Inventory Next release does not contain $remoteJarName")
+            zip.getInputStream(entry).use { input -> remoteJar.outputStream().use { input.copyTo(it) } }
+        }
+    }
+    implementation(files(remoteJar))
 
     // Masa
     implementation("fi.dy.masa.malilib:${prop("malilib")}:${prop("malilib_dependency")}")
     implementation("fi.dy.masa.litematica:${prop("litematica")}:${prop("litematica_dependency")}")
     implementation("fi.dy.masa.tweakeroo:${prop("tweakeroo")}:${prop("tweakeroo_dependency")}")
-
-    if (mcVersionInt == 260200) {
-        implementation(files("/versions/26.2/libs/tweakermore-v3.33.2-mc26.2.jar"))
-    }
 
     // 快捷潜影盒
     val quickshulkerUrl = prop("quickshulker").toString()
@@ -74,6 +85,11 @@ dependencies {
             implementation(files(quickshulkerFile))
         }
     }
+}
+
+dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 loom {
@@ -90,6 +106,9 @@ loom {
 }
 
 tasks {
+    withType<Test>().configureEach {
+        useJUnitPlatform()
+    }
     register<Copy>("buildAndCollect") {
         description = "Build and collect the jar to the root project build directory"
         group = "build"

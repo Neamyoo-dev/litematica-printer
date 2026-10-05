@@ -42,14 +42,9 @@ public class Implementation {
             GrindstoneBlock.class,          // 砂轮
             StonecutterBlock.class,         // 切石机
             ChestBlock.class,               // 箱子
-            //#if MC < 12109
-            //$$ FletchingTableBlock.class, // 制箭台
-            //#endif
             SmokerBlock.class,              // 烟熏炉
             BlastFurnaceBlock.class,        // 高炉
-            //#if MC >= 12003
             CrafterBlock.class              // 合成器（自动合成台）
-            //#endif
     };
 
     /**

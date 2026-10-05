@@ -15,7 +15,7 @@ public class HotkeysCallback {
         // 打开设置界面
         Configs.Hotkeys.OPEN_SCREEN.getKeybind().setCallback((action, keybind) -> {
             if (client.player != null && client.level != null) {
-                client.setScreen(new ConfigUi());
+                client.gui.setScreen(new ConfigUi());
             }
             return true;
         });

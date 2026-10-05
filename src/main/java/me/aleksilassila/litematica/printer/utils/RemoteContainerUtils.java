@@ -62,13 +62,8 @@ public class RemoteContainerUtils {
 
     private static String getCurrentDimension() {
         if (mc.level == null) return "";
-        //#if MC >= 12006
         // MC >= 1.20.6: server sends ResourceKey#toString() format
         return mc.level.dimension().toString();
-        //#else
-        //$$ // MC < 1.20.6: server sends the identifier format
-        //$$ return mc.level.dimension().location().toString();
-        //#endif
     }
 
     private record PendingExchange(BlockPos takePos, String takeItemId, int takeSlot,
@@ -252,18 +247,8 @@ public class RemoteContainerUtils {
     }
 
     private static Item resolveItem(String itemId) {
-        //#if MC >= 11903
         return BuiltInRegistries.ITEM.getOptional(
-        //#else
-        //$$ return net.minecraft.core.Registry.ITEM.getOptional(
-        //#endif
-            //#if MC >= 12105
             net.minecraft.resources.Identifier.parse(itemId)
-            //#elseif MC >= 12101
-            //$$ net.minecraft.resources.ResourceLocation.parse(itemId)
-            //#else
-            //$$ new net.minecraft.resources.ResourceLocation(itemId)
-            //#endif
         ).orElse(null);
     }
 

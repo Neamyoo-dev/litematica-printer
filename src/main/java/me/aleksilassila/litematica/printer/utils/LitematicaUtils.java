@@ -9,7 +9,7 @@ import fi.dy.masa.litematica.selection.Box;
 import fi.dy.masa.litematica.selection.SelectionMode;
 import fi.dy.masa.litematica.util.EasyPlaceProtocol;
 import fi.dy.masa.litematica.util.PlacementHandler;
-import fi.dy.masa.litematica.util.WorldUtils;
+import fi.dy.masa.litematica.util.EasyPlaceUtils;
 import fi.dy.masa.litematica.world.SchematicWorldHandler;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.printer.PrinterBox;
@@ -23,9 +23,6 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
 
-//#if MC < 11900
-//$$ import fi.dy.masa.malilib.util.SubChunkPos;
-//#endif
 
 @Environment(EnvType.CLIENT)
 public class LitematicaUtils {
@@ -41,10 +38,10 @@ public class LitematicaUtils {
             EasyPlaceProtocol protocol = PlacementHandler.getEffectiveProtocolVersion();
             Vec3 hitPos = Vec3.atLowerCornerOf(pos);
             if (protocol == EasyPlaceProtocol.V3) {
-                return WorldUtils.applyPlacementProtocolV3(pos, stateSchematic, hitPos);
+                return EasyPlaceUtils.applyPlacementProtocolV3(pos, stateSchematic, hitPos);
             } else if (protocol == EasyPlaceProtocol.V2) {
                 // Carpet Accurate Block placements protocol support, plus slab support
-                return WorldUtils.applyCarpetProtocolHitVec(pos, stateSchematic, hitPos);
+                return EasyPlaceUtils.applyCarpetProtocolHitVec(pos, stateSchematic, hitPos);
             }
         }
         return null;
@@ -52,18 +49,10 @@ public class LitematicaUtils {
 
     public static boolean isSchematicBlock(BlockPos pos) {
         SchematicPlacementManager schematicPlacementManager = DataManager.getSchematicPlacementManager();
-        //#if MC < 11900
-        //$$ List<SchematicPlacementManager.PlacementPart> allPlacementsTouchingChunk = schematicPlacementManager.getAllPlacementsTouchingSubChunk(new SubChunkPos(pos));
-        //#else
         List<SchematicPlacementManager.PlacementPart> allPlacementsTouchingChunk = schematicPlacementManager.getAllPlacementsTouchingChunk(pos);
-        //#endif
 
         for (SchematicPlacementManager.PlacementPart placementPart : allPlacementsTouchingChunk) {
-            //#if MC >= 260200
-            //$$ if (placementPart.getBox().contains(pos)) {
-            //#else
-            if (placementPart.getBox().containsPos(pos)) {
-            //#endif
+            if (placementPart.getBox().contains(pos)) {
                 SubRegionPlacement subRegion = getSubRegionForPlacementPart(placementPart);
                 if (subRegion != null) {
                     if (subRegion.isEnabled()) {

@@ -27,11 +27,11 @@ public class ConfigUi extends GuiConfigsBase {
     }
 
     public ConfigUi() {
-        this(Minecraft.getInstance().screen);
+        this(Minecraft.getInstance().gui.screen());
     }
 
     public static void refresh() {
-        if (Reference.MINECRAFT.screen instanceof ConfigUi gui) {
+        if (Reference.MINECRAFT.gui.screen() instanceof ConfigUi gui) {
             gui.initGui();
         }
     }

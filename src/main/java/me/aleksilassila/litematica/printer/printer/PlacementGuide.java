@@ -7,9 +7,7 @@ import me.aleksilassila.litematica.printer.printer.action.ClickAction;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.BlockMatchingType;
 import me.aleksilassila.litematica.printer.utils.*;
-//#if MC < 260300
 import net.fabricmc.fabric.mixin.content.registry.AxeItemAccessor;
-//#endif
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -199,7 +197,6 @@ public class PlacementGuide {
             case COCOA -> {
                 return new Action().setSides(ctx.requiredState.getValue(BlockStateProperties.HORIZONTAL_FACING));
             }
-            //#if MC >= 12003
             case CRAFTER -> {
                 FrontAndTop frontAndTop = ctx.requiredState.getValue(BlockStateProperties.ORIENTATION);
                 Direction facing = frontAndTop.front().getOpposite();
@@ -212,7 +209,6 @@ public class PlacementGuide {
                     return new Action().setLookDirection(facing, facing).setNeedWaitModifyLook(true);
                 }
             }
-            //#endif
             case CHEST -> {
                 Direction facing = ctx.requiredState.getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite();
                 ChestType type = ctx.requiredState.getValue(BlockStateProperties.CHEST_TYPE);
@@ -509,7 +505,6 @@ public class PlacementGuide {
                             .setRequiresSupport();
                 }
                 // 天花板悬挂告示牌处理逻辑
-                //#if MC >= 12002
                 if (signBlock instanceof WallHangingSignBlock) {
                     //TODO: 视乎方向还是有点问题, 待处理
                     Direction facing = ctx.requiredState.getValue(WallHangingSignBlock.FACING);
@@ -534,7 +529,6 @@ public class PlacementGuide {
                             .setLookRotation(rotation)
                             .setRequiresSupport();
                 }
-                //#endif
                 return null;
             }
             case BANNER -> {
@@ -623,14 +617,8 @@ public class PlacementGuide {
                 }
                 if (block instanceof HorizontalDirectionalBlock || block instanceof StonecutterBlock
                         // @formatter:off
-                        //#if MC >= 11904
                         || block instanceof
-                            //#if MC >= 12105
                             FlowerBedBlock
-                            //#else
-                            //$$ PinkPetalsBlock
-                            //#endif
-                        //#endif
                         // @formatter:on
                 ) {
                     Direction facing = ctx.requiredState.getValue(BlockStateProperties.HORIZONTAL_FACING);
@@ -643,9 +631,7 @@ public class PlacementGuide {
                     if (ctx.requiredState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
                         facing = ctx.requiredState.getValue(BlockStateProperties.HORIZONTAL_FACING);
                         if (
-                        //#if MC >= 11904
                         block instanceof DecoratedPotBlock ||
-                        //#endif
                         block instanceof CampfireBlock) facing = facing.getOpposite();
                         action.setSides(facing).setLookDirection(facing.getOpposite());
                     }
@@ -866,7 +852,6 @@ public class PlacementGuide {
                     BreakUtils.INSTANCE.add(ctx);
                 }
             }
-            //#if MC >= 11904
             case FLOWERBED -> {
                 if (ctx.currentState.getValue(BlockStateProperties.FLOWER_AMOUNT) <= ctx.requiredState.getValue(BlockStateProperties.FLOWER_AMOUNT)) {
                     return new ClickAction().setItem(ctx.requiredState.getBlock().asItem());
@@ -875,7 +860,6 @@ public class PlacementGuide {
                     BreakUtils.INSTANCE.add(ctx);
                 }
             }
-            //#endif
             case RED_STONE_WIRE -> {
                 // 在Java版中，对于没有连接到任何红石元件的十字形的红石线，可以按使用键使其变为点状，从而不与任何方向连接，再按一次可以恢复。
                 boolean allNoneRequired = ctx.requiredState.getValue(RedStoneWireBlock.NORTH) == RedstoneSide.NONE &&
@@ -1034,10 +1018,8 @@ public class PlacementGuide {
                 if (Configs.Print.BREAK_WRONG_BLOCK.getBooleanValue() && BreakUtils.canBreakBlock(ctx.blockPos)) {
                     boolean isLegitimateSign = ctx.currentState.getBlock() instanceof StandingSignBlock
                             || ctx.currentState.getBlock() instanceof WallSignBlock
-                            //#if MC >= 12002
                             || ctx.currentState.getBlock() instanceof WallHangingSignBlock
                             || ctx.currentState.getBlock() instanceof CeilingHangingSignBlock
-                            //#endif
                             ;
                     if (!isLegitimateSign) {
                         BreakUtils.INSTANCE.add(ctx);
@@ -1069,11 +1051,7 @@ public class PlacementGuide {
     enum ClassHook {
         // 放置
         TORCH(
-                //#if MC > 12002
                 BaseTorchBlock.class
-                //#else
-                //$$ TorchBlock.class
-                //#endif
         ),                                      // 火把
         SLAB(SlabBlock.class),                  // 台阶
         STAIR(StairBlock.class),                // 楼梯
@@ -1087,9 +1065,7 @@ public class PlacementGuide {
         AMETHYST(AmethystClusterBlock.class),   // 紫水晶
         DOOR(DoorBlock.class),                  // 门
         COCOA(CocoaBlock.class),                // 可可豆
-        //#if MC >= 12003
         CRAFTER(CrafterBlock.class),            // 合成器
-        //#endif
         CHEST(ChestBlock.class),                // 箱子
         OBSERVER(ObserverBlock.class),          // 侦测器
         LADDER(LadderBlock.class),              // 梯子
@@ -1101,10 +1077,8 @@ public class PlacementGuide {
         SIGN(
                 StandingSignBlock.class,
                 WallSignBlock.class
-                //#if MC >= 12002
                 , WallHangingSignBlock.class
                 , CeilingHangingSignBlock.class
-                //#endif
         ),
         BANNER(AbstractBannerBlock.class),      // 旗帜
         SKULL(AbstractSkullBlock.class),        // 头颅
@@ -1123,15 +1097,9 @@ public class PlacementGuide {
         PICKLES(SeaPickleBlock.class),                  // 海泡菜
         NOTE_BLOCK(NoteBlock.class),                    // 音符盒
         END_PORTAL_FRAME(EndPortalFrameBlock.class),    // 末地传送门框架
-        //#if MC >= 11904
         FLOWERBED(
-                //#if MC >= 12105
                 FlowerBedBlock.class
-                //#else
-                //$$ PinkPetalsBlock.class
-                //#endif
         ), // 花簇（ojng你看看你这是什么抽象命名）
-        //#endif
         VINES(VineBlock.class),                         // 藤蔓
         GLOW_LICHEN(GlowLichenBlock.class),             // 发光地衣
         FIRE(FireBlock.class, SoulFireBlock.class),     // 火，灵魂火
@@ -1143,10 +1111,10 @@ public class PlacementGuide {
         COMPOSTER(ComposterBlock.class),                // 堆肥桶
 
         // 其他
-        FARMLAND(FarmBlock.class),              // 耕地
+        FARMLAND(FarmlandBlock.class),              // 耕地
         DIRT_PATH(DirtPathBlock.class),         // 土径
         NETHER_PORTAL(NetherPortalBlock.class), // 下界传送门
-        SKIP(SkullBlock.class, LiquidBlock.class, BubbleColumnBlock.class, WaterlilyBlock.class), // 跳过
+        SKIP(SkullBlock.class, LiquidBlock.class, BubbleColumnBlock.class, LilyPadBlock.class), // 跳过
         DEFAULT; // 默认
 
         private final Class<?>[] classes;
@@ -1158,20 +1126,10 @@ public class PlacementGuide {
 
     // 辅助方法：获取物品名称（版本适配）
     private static Component getNameFromItem(Item item) {
-        //#if MC >= 260100
-        //$$ return item.getName(item.getDefaultInstance());
-        //#elseif MC > 12101
-        return item.getName();
-        //#else
-        //$$ return item.getDescription();
-        //#endif
+        return item.getName(item.getDefaultInstance());
     }
 
     private static Identifier of(String string) {
-        //#if MC > 12006
         return Identifier.parse(string);
-        //#else
-        //$$ return new ResourceLocation(string);
-        //#endif
     }
 }

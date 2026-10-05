@@ -2,7 +2,7 @@ package me.aleksilassila.litematica.printer.handler;
 
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.malilib.util.LayerMode;
-import fi.dy.masa.malilib.util.LayerRange;
+import fi.dy.masa.malilib.util.position.LayerRange;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.IterationOrderType;
 import me.aleksilassila.litematica.printer.enums.RadiusShapeType;
@@ -69,8 +69,8 @@ public class IteratorManager {
         LayerRange layerRange = DataManager.getRenderLayerRange();
         LayerMode layerMode = layerRange.getLayerMode();
         Direction.Axis layerAxis = layerRange.getAxis();
-        int layerMin = layerRange.getLayerMin();
-        int layerMax = layerRange.getLayerMax();
+        int layerMin = layerRange.getLayerRangeMin();
+        int layerMax = layerRange.getLayerRangeMax();
         int layerSingle = layerRange.getLayerSingle();
         int layerAbove = layerRange.getLayerAbove();
         int layerBelow = layerRange.getLayerBelow();

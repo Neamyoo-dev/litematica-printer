@@ -20,14 +20,12 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-//#if MC >= 12105
 import net.minecraft.network.HashedStack;
-//#endif
 
 import java.util.*;
 
@@ -117,11 +115,9 @@ public class QuickShulkerUtils {
 
         ShulkerSource source = (ShulkerSource) Configs.Print.SHULKER_SOURCE.getOptionListValue();
 
-        //#if MC >= 260102
         if (source == ShulkerSource.TAKE_IT_OUT) {
             return TakeItOutCompat.tryExtract(player, items);
         }
-        //#endif
 
         if (source == ShulkerSource.MOD && !QUICK_SHULKER_LOADED) {
             return false;
@@ -197,7 +193,7 @@ public class QuickShulkerUtils {
 
     // ========== 容器槽位点击 ==========
 
-    public static void clickSlot(AbstractContainerMenu container, int slotIndex, int button, ClickType type) {
+    public static void clickSlot(AbstractContainerMenu container, int slotIndex, int button, ContainerInput type) {
         ClientPacketListener connection = mc.getConnection();
         if (connection == null || mc.player == null) return;
 
@@ -208,25 +204,16 @@ public class QuickShulkerUtils {
             copies.add(slotItem.getItem().copy());
         }
 
-        //#if MC >= 12105
         Int2ObjectMap<HashedStack> snapshot = new Int2ObjectOpenHashMap<>();
-        //#else
-        //$$ Int2ObjectMap<ItemStack> snapshot = new Int2ObjectOpenHashMap<>();
-        //#endif
 
         for (int j = 0; j < totalSlots; j++) {
             ItemStack original = copies.get(j);
             ItemStack current = slots.get(j).getItem();
             if (!ItemStack.isSameItem(original, current)) {
-                //#if MC >= 12105
                 snapshot.put(j, HashedStack.create(current, connection.decoratedHashOpsGenenerator()));
-                //#else
-                //$$ snapshot.put(j, current.copy());
-                //#endif
             }
         }
 
-        //#if MC >= 12105
         HashedStack carried = HashedStack.create(container.getCarried(), connection.decoratedHashOpsGenenerator());
         connection.send(new ServerboundContainerClickPacket(
                 container.containerId,
@@ -237,39 +224,28 @@ public class QuickShulkerUtils {
                 snapshot,
                 carried
         ));
-        //#else
-        //$$ connection.send(new ServerboundContainerClickPacket(
-        //$$         container.containerId,
-        //$$         container.getStateId(),
-        //$$         slotIndex,
-        //$$         button,
-        //$$         type,
-        //$$         container.getCarried().copy(),
-        //$$         snapshot
-        //$$ ));
-        //#endif
 
         container.clicked(slotIndex, button, type, mc.player);
     }
 
     public static void pickupSlot(AbstractContainerMenu container, int slotIndex) {
-        clickSlot(container, slotIndex, 0, ClickType.PICKUP);
+        clickSlot(container, slotIndex, 0, ContainerInput.PICKUP);
     }
 
     /** button 即目标快捷栏槽位 0-8 */
     public static void swapWithHotbar(AbstractContainerMenu container, int slotIndex, int hotbarSlot) {
-        clickSlot(container, slotIndex, hotbarSlot, ClickType.SWAP);
+        clickSlot(container, slotIndex, hotbarSlot, ContainerInput.SWAP);
     }
 
     // ========== 插件服右键开箱 ==========
 
     public static void openShulkerByRightClick(int inventorySlot) {
         if (mc.player == null || mc.gameMode == null) return;
-        mc.gameMode.handleInventoryMouseClick(
+        mc.gameMode.handleContainerInput(
                 mc.player.containerMenu.containerId,
                 inventorySlot,
                 1, // 右键
-                ClickType.PICKUP,
+                ContainerInput.PICKUP,
                 mc.player);
     }
 
@@ -330,16 +306,10 @@ public class QuickShulkerUtils {
         if (connection == null || mc.player == null) return false;
 
         // 不预测库存变动，让服务端回传变动槽位后再确认取货或回塞。
-        //#if MC >= 12105
         connection.send(new ServerboundContainerClickPacket(
                 container.containerId, container.getStateId(), Shorts.checkedCast(sourceSlot),
-                (byte) 0, ClickType.QUICK_MOVE, new Int2ObjectOpenHashMap<>(),
+                (byte) 0, ContainerInput.QUICK_MOVE, new Int2ObjectOpenHashMap<>(),
                 HashedStack.create(container.getCarried(), connection.decoratedHashOpsGenenerator())));
-        //#else
-        //$$ connection.send(new ServerboundContainerClickPacket(
-        //$$         container.containerId, container.getStateId(), sourceSlot, 0, ClickType.QUICK_MOVE,
-        //$$         container.getCarried().copy(), new Int2ObjectOpenHashMap<>()));
-        //#endif
         return true;
     }
 

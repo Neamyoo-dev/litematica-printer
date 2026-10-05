@@ -27,17 +27,10 @@ import java.util.Optional;
 public class BlockUtils {
     @NotNull public static final Minecraft client = Minecraft.getInstance();
     private static final BooleanProperty wallUpProperty = WallBlock.UP;
-    //#if MC > 12104
     private static final EnumProperty<WallSide> wallNorthProperty = WallBlock.NORTH;
     private static final EnumProperty<WallSide> wallSouthProperty = WallBlock.SOUTH;
     private static final EnumProperty<WallSide> wallWestProperty = WallBlock.WEST;
     private static final EnumProperty<WallSide> wallEastProperty = WallBlock.EAST;
-    //#else
-    //$$ private final static EnumProperty<WallSide> wallNorthProperty = WallBlock.NORTH_WALL;
-    //$$ private final static EnumProperty<WallSide> wallSouthProperty = WallBlock.SOUTH_WALL;
-    //$$ private final static EnumProperty<WallSide> wallWestProperty = WallBlock.WEST_WALL;
-    //$$ private final static EnumProperty<WallSide> wallEastProperty = WallBlock.EAST_WALL;
-    //#endif
 
     private static final float YAW_MIN = -180.0F;
     private static final float YAW_MAX = 180.0F;
@@ -49,19 +42,11 @@ public class BlockUtils {
             new Direction[] {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
 
     public static boolean isReplaceable(BlockState blockState) {
-        //#if MC > 11902
         return blockState.canBeReplaced();
-        //#else
-        //$$ return blockState.getMaterial().isReplaceable();
-        //#endif
     }
 
     public static @NotNull Block getBlock(Identifier blockId) {
-        //#if MC > 12101
         return BuiltInRegistries.BLOCK.getValue(blockId);
-        //#else
-        //$$ return BuiltInRegistries.BLOCK.get(blockId);
-        //#endif
     }
 
     public static Identifier getKey(Block block) {
@@ -190,11 +175,7 @@ public class BlockUtils {
     }
 
     public static Vec3i getVector(Direction direction) {
-        //#if MC >= 12103
         return direction.getUnitVec3i();
-        //#else
-        //$$ return direction.getNormal();
-        //#endif
     }
 
     public static Direction[] orderedByNearest(float yaw, float pitch) {
@@ -377,20 +358,6 @@ public class BlockUtils {
 
     @SuppressWarnings("UnstableApiUsage")
     public static Map<Block, Block> getStrippedBlocksMap() {
-        //#if MC >= 260300
-        //$$ Map<Block, Block> stripped = new HashMap<>();
-        //$$ for (Block block : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
-        //$$     String path = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).getPath();
-        //$$     if (path.startsWith("stripped_")) continue;
-        //$$     Block result = net.minecraft.core.registries.BuiltInRegistries.BLOCK
-        //$$             .getValue(Identifier.withDefaultNamespace("stripped_" + path));
-        //$$     if (result != Blocks.AIR) {
-        //$$         stripped.put(block, result);
-        //$$     }
-        //$$ }
-        //$$ return stripped;
-        //#else
-        return net.fabricmc.fabric.mixin.content.registry.AxeItemAccessor.getStrippedBlocks();
-        //#endif
+        return net.fabricmc.fabric.mixin.content.registry.AxeItemAccessor.getStrippables();
     }
 }

@@ -22,11 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
-//#if MC >= 12111
 import fi.dy.masa.malilib.util.data.json.JsonUtils;
-//#else
-//$$ import fi.dy.masa.malilib.util.JsonUtils;
-//#endif
 public class Configs extends ConfigBuilders implements IConfigHandler {
     private static final Configs INSTANCE = new Configs();
 
@@ -695,11 +691,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
     public void load() {
         File settingFile = new File(FILE_PATH);
         if (settingFile.isFile() && settingFile.exists()) {
-            //#if MC >= 12111
             JsonElement jsonElement = JsonUtils.parseJsonFile(settingFile.toPath());
-            //#else
-            //$$ JsonElement jsonElement = JsonUtils.parseJsonFile(settingFile);
-            //#endif
             if (jsonElement != null && jsonElement.isJsonObject()) {
                 JsonObject obj = jsonElement.getAsJsonObject();
                 ConfigUtils.readConfigBase(obj, Reference.MOD_ID, OPTIONS);
@@ -712,11 +704,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
         if ((CONFIG_DIR.exists() && CONFIG_DIR.isDirectory()) || CONFIG_DIR.mkdirs()) {
             JsonObject configRoot = new JsonObject();
             ConfigUtils.writeConfigBase(configRoot, Reference.MOD_ID, OPTIONS);
-            //#if MC >= 12111
             JsonUtils.writeJsonToFile(configRoot, new File(FILE_PATH).toPath());
-            //#else
-            //$$ JsonUtils.writeJsonToFile(configRoot, new File(FILE_PATH));
-            //#endif
         }
     }
 
@@ -725,10 +713,8 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
         ConfigManager.getInstance().registerConfigHandler(Reference.MOD_ID, Configs.INSTANCE);
         InputEventHandler.getKeybindManager().registerKeybindProvider(InputHandler.getInstance());
         InputEventHandler.getInputManager().registerKeyboardInputHandler(InputHandler.getInstance());
-        //#if MC > 12006
         fi.dy.masa.malilib.registry.Registry.CONFIG_SCREEN.registerConfigScreenFactory(
                 new fi.dy.masa.malilib.util.data.ModInfo(Reference.MOD_ID, Reference.MOD_NAME, ConfigUi::new)
         );
-        //#endif
     }
 }

@@ -8,10 +8,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.Container;
 import org.jetbrains.annotations.Nullable;
 
-//#if MC >= 260102
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-//#endif
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -77,9 +75,6 @@ public class TakeItOutCompat {
     }
 
     public static boolean tryExtract(LocalPlayer player, Item... items) {
-        //#if MC < 260102
-        //$$ return false;
-        //#else
         if (!ModUtils.isTakeItOutLoaded()) return false;
         if (items == null || items.length == 0) return false;
         if (isAwaitingItem()) return false;
@@ -112,6 +107,5 @@ public class TakeItOutCompat {
             }
         } catch (Exception ignored) { }
         return false;
-        //#endif
     }
 }

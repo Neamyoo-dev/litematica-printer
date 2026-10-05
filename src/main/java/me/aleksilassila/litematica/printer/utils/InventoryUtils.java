@@ -21,15 +21,13 @@ import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-//#if MC >= 12105
 import net.minecraft.network.HashedStack;
-//#endif
 
 import java.util.List;
 import java.util.Map;
@@ -47,27 +45,15 @@ public class InventoryUtils {
 
 
     public static int getSelectedSlot(Inventory inventory) {
-        //#if MC > 12104
         return inventory.getSelectedSlot();
-        //#else
-        //$$ return inventory.selected;
-        //#endif
     }
 
     public static void setSelectedSlot(Inventory inventory, int slot) {
-        //#if MC > 12101
         inventory.setSelectedSlot(slot);
-        //#else
-        //$$ inventory.selected = slot;
-        //#endif
     }
 
     public static NonNullList<ItemStack> getMainStacks(Inventory inventory) {
-        //#if MC > 12104
         return inventory.getNonEquipmentItems();
-        //#else
-        //$$ return inventory.items;
-        //#endif
     }
 
     public static boolean playerHasAccessToItem(LocalPlayer playerEntity, Item item) {
@@ -174,11 +160,7 @@ public class InventoryUtils {
         Player player = mc.player;
         if (player == null) return false;
 
-        //#if MC > 12004
         boolean b = fi.dy.masa.malilib.util.InventoryUtils.areStacksEqualIgnoreNbt(stackReference, player.getMainHandItem());
-        //#else
-        //$$ boolean b = fi.dy.masa.malilib.util.InventoryUtils.areStacksEqual(stackReference, player.getMainHandItem());
-        //#endif
         if (b) {
             return false;
         }
@@ -198,51 +180,31 @@ public class InventoryUtils {
                     copies.add(slotItem.getItem().copy());
                 }
 
-                //#if MC >= 12105
                 Int2ObjectMap<HashedStack> snapshot = new Int2ObjectOpenHashMap<>();
-                //#else
-                //$$ Int2ObjectMap<ItemStack> snapshot = new Int2ObjectOpenHashMap<>();
-                //#endif
 
                 for (int j = 0; j < totalSlots; j++) {
                     ItemStack original = copies.get(j);
                     ItemStack current = slots.get(j).getItem();
                     if (!ItemStack.isSameItem(original, current)) {
-                        //#if MC >=12105
                         snapshot.put(j, HashedStack.create(current, connection.decoratedHashOpsGenenerator()));
-                        //#else
-                        //$$ snapshot.put(j, current.copy());
-                        //#endif
                     }
                 }
 
-                //#if MC >= 12105
                 HashedStack hashedStack = HashedStack.create(player.inventoryMenu.getCarried(), connection.decoratedHashOpsGenenerator());
                 connection.send(new ServerboundContainerClickPacket(
                         player.inventoryMenu.containerId,
                         player.inventoryMenu.getStateId(),
                         Shorts.checkedCast(slot),
                         SignedBytes.checkedCast(currentHotbarSlot),
-                        ClickType.SWAP,
+                        ContainerInput.SWAP,
                         snapshot,
                         hashedStack
                 ));
-                //#else
-                //$$  connection.send(new ServerboundContainerClickPacket(
-                //$$           player.inventoryMenu.containerId,
-                //$$           player.inventoryMenu.getStateId(),
-                //$$           slot,
-                //$$           currentHotbarSlot,
-                //$$           ClickType.SWAP,
-                //$$           player.inventoryMenu.getCarried().copy(),
-                //$$           snapshot
-                //$$   ));
-                //#endif
 
-                player.inventoryMenu.clicked(slot, currentHotbarSlot, ClickType.SWAP, player);
+                player.inventoryMenu.clicked(slot, currentHotbarSlot, ContainerInput.SWAP, player);
             } else {
                 if (client.gameMode != null) {
-                    client.gameMode.handleInventoryMouseClick(player.inventoryMenu.containerId, slot, currentHotbarSlot, ClickType.SWAP, player);
+                    client.gameMode.handleContainerInput(player.inventoryMenu.containerId, slot, currentHotbarSlot, ContainerInput.SWAP, player);
                 }
             }
             return true;
@@ -305,59 +267,39 @@ public class InventoryUtils {
             }
 
             // 版本兼容的快照对象
-            //#if MC >= 12105
             Int2ObjectMap<HashedStack> snapshot = new Int2ObjectOpenHashMap<>();
-            //#else
-            //$$ Int2ObjectMap<ItemStack> snapshot = new Int2ObjectOpenHashMap<>();
-            //#endif
 
             // 构建库存快照
             for (int j = 0; j < totalSlots; j++) {
                 ItemStack original = copies.get(j);
                 ItemStack current = slots.get(j).getItem();
                 if (!ItemStack.isSameItem(original, current)) {
-                    //#if MC >=12105
                     snapshot.put(j, HashedStack.create(current, connection.decoratedHashOpsGenenerator()));
-                    //#else
-                    //$$ snapshot.put(j, current.copy());
-                    //#endif
                 }
             }
 
             // 发送SWAP数据包到副手槽位40
-            //#if MC >= 12105
             HashedStack hashedStack = HashedStack.create(player.inventoryMenu.getCarried(), connection.decoratedHashOpsGenenerator());
             connection.send(new ServerboundContainerClickPacket(
                     player.inventoryMenu.containerId,
                     player.inventoryMenu.getStateId(),
                     Shorts.checkedCast(sourceSlot),
                     SignedBytes.checkedCast(OFFHAND_SLOT_INDEX), // 目标：副手槽位40
-                    ClickType.SWAP,
+                    ContainerInput.SWAP,
                     snapshot,
                     hashedStack
             ));
-            //#else
-            //$$ connection.send(new ServerboundContainerClickPacket(
-            //$$         player.inventoryMenu.containerId,
-            //$$         player.inventoryMenu.getStateId(),
-            //$$         sourceSlot,
-            //$$         OFFHAND_SLOT_INDEX, // 目标：副手槽位40
-            //$$         ClickType.SWAP,
-            //$$         player.inventoryMenu.getCarried().copy(),
-            //$$         snapshot
-            //$$ ));
-            //#endif
 
             // 本地同步交换操作
-            player.inventoryMenu.clicked(sourceSlot, OFFHAND_SLOT_INDEX, ClickType.SWAP, player);
+            player.inventoryMenu.clicked(sourceSlot, OFFHAND_SLOT_INDEX, ContainerInput.SWAP, player);
         } else {
             // 不使用数据包：本地直接交换到副手
             if (client.gameMode != null) {
-                client.gameMode.handleInventoryMouseClick(
+                client.gameMode.handleContainerInput(
                         player.inventoryMenu.containerId,
                         sourceSlot,
                         OFFHAND_SLOT_INDEX, // 目标：副手槽位40
-                        ClickType.SWAP,
+                        ContainerInput.SWAP,
                         player
                 );
             }

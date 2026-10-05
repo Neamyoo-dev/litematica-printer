@@ -3,12 +3,7 @@ package me.aleksilassila.litematica.printer.render;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-//#if MC >= 12000
-import net.minecraft.client.gui.GuiGraphics;
-//#else
-//$$ import net.minecraft.client.gui.GuiComponent;
-//$$ import com.mojang.blaze3d.vertex.PoseStack;
-//#endif
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.locale.Language;
 import net.minecraft.world.item.ItemStack;
 import fi.dy.masa.litematica.render.infohud.IInfoHudRenderer;
@@ -53,13 +48,7 @@ public class MissingMaterialHudRenderer implements IInfoHudRenderer
         return List.of();
     }
 
-    //#if MC >= 12106
-    public int render(GuiGraphics drawContext, int xOffset, int yOffset, HudAlignment alignment)
-    //#elseif MC >= 12000
-    //$$ public int render(int xOffset, int yOffset, HudAlignment alignment, GuiGraphics drawContext)
-    //#else
-    //$$ public int render(int xOffset, int yOffset, HudAlignment alignment, PoseStack matrixStack)
-    //#endif
+    public int render(GuiGraphicsExtractor drawContext, int xOffset, int yOffset, HudAlignment alignment)
     {
         MissingMaterialTracker tracker = MissingMaterialTracker.getInstance();
         List<MissingMaterialTracker.Entry> missing = tracker.getMissing();
@@ -113,10 +102,9 @@ public class MissingMaterialHudRenderer implements IInfoHudRenderer
         int x2 = x1 + maxLineLength + bgMargin * 2;
         int y2 = y1 + contentHeight + bgMargin;
 
-        //#if MC >= 12000
         drawContext.fill(x1, y1, x2, y2, BG_COLOR);
 
-        drawContext.drawString(font, title,
+        drawContext.text(font, title,
                 posX + 2, posY + 2, TEXT_COLOR, true);
 
         int itemIconX = posX;
@@ -126,35 +114,26 @@ public class MissingMaterialHudRenderer implements IInfoHudRenderer
             MissingMaterialTracker.Entry entry = missing.get(i);
             ItemStack stack = entry.item.getDefaultInstance();
 
-            //#if MC >= 260100
-            //$$ drawContext.item(stack, itemIconX, itemY);
-            //$$ drawContext.itemDecorations(font, stack, itemIconX, itemY);
-            //#else
-            drawContext.renderItem(stack, itemIconX, itemY);
-            drawContext.renderItemDecorations(font, stack, itemIconX, itemY);
-            //#endif
+            drawContext.item(stack, itemIconX, itemY);
+            drawContext.itemDecorations(font, stack, itemIconX, itemY);
 
             String name = getItemName(entry);
             int availableWidth = maxLineLength - 20;
             if (font.width(name) > availableWidth) {
                 name = font.plainSubstrByWidth(name, availableWidth - font.width("...")) + "...";
             }
-            drawContext.drawString(font, name, itemTextX, itemY + 4, TEXT_COLOR, true);
+            drawContext.text(font, name, itemTextX, itemY + 4, TEXT_COLOR, true);
 
             itemY += LINE_HEIGHT;
         }
 
         if (showOverflow) {
             String overflow = String.format(Language.getInstance().getOrDefault("litematica-printer.hud.missing.overflow"), missing.size() - MAX_DISPLAY_ITEMS);
-            drawContext.drawString(font, overflow,
+            drawContext.text(font, overflow,
                     posX + 2, itemY + 4, TEXT_COLOR_GRAY, true);
         }
 
         return contentHeight + 4;
-        //#else
-        //$$ return renderOld(matrixStack, missing, totalTypes, displayCount, showOverflow,
-        //$$         maxLineLength, posX, posY, contentHeight, bgMargin);
-        //#endif
     }
 
     private static String getItemName(MissingMaterialTracker.Entry entry)
@@ -164,59 +143,4 @@ public class MissingMaterialHudRenderer implements IInfoHudRenderer
                 : entry.item.getDefaultInstance().getDisplayName().getString();
     }
 
-    //#if MC < 12000
-    //$$ private static int renderOld(PoseStack matrixStack,
-    //$$                               List<MissingMaterialTracker.Entry> missing,
-    //$$                               int totalTypes, int displayCount, boolean showOverflow,
-    //$$                               int maxLineLength, int posX, int posY,
-    //$$                               int contentHeight, int bgMargin)
-    //$$ {
-    //$$     Minecraft mc = Minecraft.getInstance();
-    //$$     Font font = mc.font;
-    //$$
-    //$$     int x1 = posX - bgMargin;
-    //$$     int y1 = posY - bgMargin;
-    //$$     int x2 = x1 + maxLineLength + bgMargin * 2;
-    //$$     int y2 = y1 + contentHeight + bgMargin;
-    //$$
-    //$$     GuiComponent.fill(matrixStack, x1, y1, x2, y2, BG_COLOR);
-    //$$
-    //$$     String title = String.format(Language.getInstance().getOrDefault("litematica-printer.hud.missing.title"), totalTypes);
-    //$$     GuiComponent.drawString(matrixStack, font, title,
-    //$$             posX + 2, posY + 2, TEXT_COLOR);
-    //$$
-    //$$     int itemIconX = posX;
-    //$$     int itemTextX = posX + 18;
-    //$$     int itemY = posY + 16;
-    //$$     for (int i = 0; i < displayCount; i++) {
-    //$$         MissingMaterialTracker.Entry entry = missing.get(i);
-    //$$         ItemStack stack = entry.item.getDefaultInstance();
-    //$$
-    //$$         //#if MC >= 11900
-    //$$         mc.getItemRenderer().renderGuiItem(matrixStack, stack, itemIconX, itemY);
-    //$$         mc.getItemRenderer().renderGuiItemDecorations(matrixStack, font, stack, itemIconX, itemY);
-    //$$         //#else
-    //$$         //$$ mc.getItemRenderer().renderGuiItem(stack, itemIconX, itemY);
-    //$$         //$$ mc.getItemRenderer().renderGuiItemDecorations(font, stack, itemIconX, itemY);
-    //$$         //#endif
-    //$$
-    //$$         String name = getItemName(entry);
-    //$$         int availableWidth = maxLineLength - 20;
-    //$$         if (font.width(name) > availableWidth) {
-    //$$             name = font.plainSubstrByWidth(name, availableWidth - font.width("...")) + "...";
-    //$$         }
-    //$$         GuiComponent.drawString(matrixStack, font, name, itemTextX, itemY + 4, TEXT_COLOR);
-    //$$
-    //$$         itemY += LINE_HEIGHT;
-    //$$     }
-    //$$
-    //$$     if (showOverflow) {
-    //$$         String overflow = String.format(Language.getInstance().getOrDefault("litematica-printer.hud.missing.overflow"), missing.size() - MAX_DISPLAY_ITEMS);
-    //$$         GuiComponent.drawString(matrixStack, font, overflow,
-    //$$                 posX + 2, itemY + 4, TEXT_COLOR_GRAY);
-    //$$     }
-    //$$
-    //$$     return contentHeight + 4;
-    //$$ }
-    //#endif
 }

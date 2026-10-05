@@ -19,7 +19,6 @@ fun Project.downloadDependencyMod(downloadUrl: String, fileName: String? = null)
 }
 
 val Project.modId get() = propStr("mod_id")
-val Project.wrapperModId get() = "$modId-wrapper"
 val Project.modName get() = propStr("mod_name")
 val Project.modVersion get() = propStr("mod_version")
 val Project.modMavenGroup get() = propStr("mod_maven_group")
@@ -33,7 +32,7 @@ val Project.modSources get() = propStrOrNull("mod_sources")
 
 val Project.mcDependency get() = propStrOrNull("minecraft_dependency")
 val Project.mcVersion get() = propStrOrNull("minecraft_version")
-val Project.mcVersionInt get() = propStrOrNull("mcVersion")?.toIntOrNull() ?: -1
+val Project.mcVersionInt get() = 260200
 val Project.fabricLoaderVersion get() = propStrOrNull("loader_version")
 val Project.fabricApiVersion get() = propStrOrNull("fabric_version")
 
@@ -42,14 +41,7 @@ val Project.litematica get() = propStrOrNull("litematica_dependency")
 
 val Project.lombokVersion get() = propStr("lombok_version")
 
-val Project.javaVersion
-    get() = when {
-        mcVersionInt >= 260000 -> JavaVersion.VERSION_25
-        mcVersionInt >= 12005 -> JavaVersion.VERSION_21
-        mcVersionInt >= 11800 -> JavaVersion.VERSION_17
-        mcVersionInt >= 11700 -> JavaVersion.VERSION_16
-        else -> JavaVersion.VERSION_1_8
-    }
+val Project.javaVersion get() = JavaVersion.VERSION_25
 val Project.mixinJavaVersion get() = "JAVA_${javaVersion}"
 
 val Project.fullProjectVersion: String get() = getFullProjectVersion(mcVersion, modVersion)
@@ -106,7 +98,6 @@ private fun getFullProjectVersion(mcVersion: String?, modVersion: String): Strin
 val Project.placeholderProps: Map<String, Any?>
     get() = mapOf(
         "mod_id" to modId,
-        "mod_wrapper_id" to wrapperModId,
         "mod_name" to modName,
         "mod_version" to fullProjectVersion,
         "mod_description" to modDescription,
