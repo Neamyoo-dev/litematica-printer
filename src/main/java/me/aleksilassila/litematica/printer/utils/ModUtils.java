@@ -4,12 +4,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.fabricmc.loader.api.Version;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Style;
 import org.jetbrains.annotations.Nullable;
-import lombok.NonNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,7 +22,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Pattern;
 
 public class ModUtils {
     // 阻止 UI 显示 如果此时已经在 UI 中 请设置为 2 因为关闭 UI 也会调用一次
@@ -116,39 +115,14 @@ public class ModUtils {
     // 本地版本（从fabric.mod.json读取）
     public static final String LOCAL_VERSION = getVersionFromModJson();
 
-    // 语义化版本号正则：匹配v1.2.3、1.2、5等格式，提取数字部分
-    public static final Pattern SEM_VER_PATTERN = Pattern.compile("^v?(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?(?:-(\\w+)(?:\\.(\\d+))?)?.*$");
-
     public static void checkForUpdates() {
         CompletableFuture.runAsync(() -> {
-            boolean isLocalBeta = isBetaVersion(LOCAL_VERSION);
-            String latestVersion = getLatestPrinterVersion(isLocalBeta);
-            if (latestVersion == null) {
-                return;
-            }
-            SemanticVersion localSemVer = SemanticVersion.parse(LOCAL_VERSION);
-            SemanticVersion latestSemVer = SemanticVersion.parse(latestVersion);
-            if (localSemVer == null || latestSemVer == null) {
-                MessageUtils.addMessage("版本号解析失败，本地版本：" + LOCAL_VERSION + "，最新版本：" + latestVersion);
-                return;
-            }
-            if (latestSemVer.isHigherThan(localSemVer)) {
-                Minecraft.getInstance().execute(() -> MessageUtils.addMessage(MessageUtils.translatable("litematica_printer.update.available", LOCAL_VERSION, latestVersion)
-                        .setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW))));
-            }
+            String latestVersion = getLatestPrinterVersion(LOCAL_VERSION);
+            if (latestVersion == null) return;
+            Minecraft.getInstance().execute(() -> MessageUtils.addMessage(
+                    MessageUtils.translatable("litematica-printer.update.available", LOCAL_VERSION, latestVersion)
+                            .setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW))));
         });
-    }
-
-    /**
-     * 判断版本字符串是否为 beta 版本
-     * @param version 版本字符串，如 "1.3-beta.1" 或 "1.2.3"
-     * @return 如果是 beta 版本则返回 true
-     */
-    private static boolean isBetaVersion(String version) {
-        if (version == null || version.isEmpty()) {
-            return false;
-        }
-        return version.toLowerCase().contains("-beta");
     }
 
     /**
@@ -176,10 +150,10 @@ public class ModUtils {
 
     /**
      * 获取GitHub上最新的版本号
-     * @param isBeta 是否获取 beta 版本
+     * @param currentVersion 当前版本；正式版只接收正式版更新，测试版可升级到正式版
      * @return 最新版本号，如果获取失败则返回null
      */
-    private static String getLatestPrinterVersion(boolean isBeta) {
+    private static String getLatestPrinterVersion(String currentVersion) {
         try {
             URI uri = URI.create("https://api.github.com/repos/Neamyoo-dev/litematica-printer/releases");
             HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
@@ -193,136 +167,26 @@ public class ModUtils {
                 try (Scanner scanner = new Scanner(connection.getInputStream(), StandardCharsets.UTF_8)) {
                     String response = scanner.useDelimiter("\\A").next();
                     com.google.gson.JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
+                    String latestTag = null;
+                    Version latest = null;
                     for (int i = 0; i < jsonArray.size(); i++) {
                         JsonObject release = jsonArray.get(i).getAsJsonObject();
                         String tagName = release.get("tag_name").getAsString();
-                        boolean isPrerelease = release.get("prerelease").getAsBoolean();
-                        boolean isBetaTag = tagName.toLowerCase().contains("-beta");
-                        
-                        if (isBeta) {
-                            if (isBetaTag) {
-                                return tagName;
-                            }
-                        } else {
-                            if (!isPrerelease && !isBetaTag) {
-                                return tagName;
-                            }
+                        boolean prerelease = release.get("prerelease").getAsBoolean();
+                        boolean draft = release.get("draft").getAsBoolean();
+                        if (!VersionUtils.isUpdateCandidate(currentVersion, tagName, prerelease, draft)) continue;
+                        Version candidate = VersionUtils.parse(tagName);
+                        if (latest == null || candidate.compareTo(latest) > 0) {
+                            latestTag = tagName;
+                            latest = candidate;
                         }
                     }
+                    return latestTag;
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-    /**
-     * 语义化版本号类，用于版本比较
-     */
-    public static class SemanticVersion implements Comparable<SemanticVersion> {
-        private final int major;
-        private final int minor;
-        private final int patch;
-        private final String prereleaseType;
-        private final int prereleaseNumber;
-
-        public SemanticVersion(int major, int minor, int patch) {
-            this(major, minor, patch, null, 0);
-        }
-
-        public SemanticVersion(int major, int minor, int patch, String prereleaseType, int prereleaseNumber) {
-            this.major = major;
-            this.minor = minor;
-            this.patch = patch;
-            this.prereleaseType = prereleaseType;
-            this.prereleaseNumber = prereleaseNumber;
-        }
-
-        /**
-         * 解析版本字符串为语义化版本对象
-         * @param version 版本字符串，如 "1.2.3" 或 "v1.2" 或 "1.3-beta.1"
-         * @return 语义化版本对象，如果解析失败则返回null
-         */
-        public static SemanticVersion parse(String version) {
-            if (version == null || version.isEmpty()) {
-                return null;
-            }
-            java.util.regex.Matcher matcher = SEM_VER_PATTERN.matcher(version);
-            if (matcher.matches()) {
-                try {
-                    int major = Integer.parseInt(matcher.group(1));
-                    int minor = matcher.group(2) != null ? Integer.parseInt(matcher.group(2)) : 0;
-                    int patch = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
-                    String prereleaseType = matcher.group(4);
-                    int prereleaseNumber = matcher.group(5) != null ? Integer.parseInt(matcher.group(5)) : 0;
-                    return new SemanticVersion(major, minor, patch, prereleaseType, prereleaseNumber);
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * 检查当前版本是否高于指定版本
-         * @param other 另一个语义化版本对象
-         * @return 如果当前版本更高，则返回true
-         */
-        public boolean isHigherThan(SemanticVersion other) {
-            if (other == null) {
-                return true;
-            }
-            return this.compareTo(other) > 0;
-        }
-
-        @Override
-        public int compareTo(@NonNull SemanticVersion other) {
-            // 比较主版本号
-            int majorCompare = Integer.compare(this.major, other.major);
-            if (majorCompare != 0) {
-                return majorCompare;
-            }
-            // 比较次版本号
-            int minorCompare = Integer.compare(this.minor, other.minor);
-            if (minorCompare != 0) {
-                return minorCompare;
-            }
-            // 比较补丁版本号
-            int patchCompare = Integer.compare(this.patch, other.patch);
-            if (patchCompare != 0) {
-                return patchCompare;
-            }
-            // 比较预发布类型
-            if (this.prereleaseType == null && other.prereleaseType == null) {
-                return 0;
-            }
-            if (this.prereleaseType == null) {
-                return 1;
-            }
-            if (other.prereleaseType == null) {
-                return -1;
-            }
-            // 都是预发布版本，比较类型
-            int typeCompare = this.prereleaseType.compareToIgnoreCase(other.prereleaseType);
-            if (typeCompare != 0) {
-                return typeCompare;
-            }
-            // 相同类型，比较序号
-            return Integer.compare(this.prereleaseNumber, other.prereleaseNumber);
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append(major).append(".").append(minor).append(".").append(patch);
-            if (prereleaseType != null) {
-                sb.append("-").append(prereleaseType);
-                if (prereleaseNumber > 0) {
-                    sb.append(".").append(prereleaseNumber);
-                }
-            }
-            return sb.toString();
-        }
     }
 }
