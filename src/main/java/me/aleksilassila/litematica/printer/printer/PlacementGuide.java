@@ -4,6 +4,7 @@ import me.aleksilassila.litematica.printer.I18n;
 import me.aleksilassila.litematica.printer.Reference;
 import me.aleksilassila.litematica.printer.printer.action.Action;
 import me.aleksilassila.litematica.printer.printer.action.ClickAction;
+import me.aleksilassila.litematica.printer.printer.action.WaterBucketAction;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.BlockMatchingType;
 import me.aleksilassila.litematica.printer.utils.*;
@@ -25,6 +26,7 @@ import net.minecraft.world.level.block.state.properties.*;
 import net.minecraft.world.level.portal.PortalShape;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.attribute.EnvironmentAttributes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,7 +78,20 @@ public class PlacementGuide {
         if (Configs.Print.SKIP_WATERLOGGED_BLOCK.getBooleanValue() && (BlockUtils.needsWater(ctx.requiredState) || BlockUtils.isLiveCoral(ctx.requiredState))) {
             return null;
         }
+        boolean creative = mc.player != null && mc.player.getAbilities().instabuild;
+        if (creative && BlockUtils.needsWater(ctx.requiredState)
+                && !ctx.level.environmentAttributes().getValue(EnvironmentAttributes.WATER_EVAPORATES, ctx.blockPos)
+                && !BlockUtils.isWaterSource(ctx.currentState) && !BlockUtils.isWaterlogged(ctx.currentState)) {
+            if (BlockUtils.isWaterSource(ctx.requiredState) && state == BlockMatchingType.MISSING_BLOCK) {
+                return new WaterBucketAction(false);
+            }
+            if (BlockUtils.isWaterlogged(ctx.requiredState)
+                    && ctx.currentState.is(ctx.requiredState.getBlock())) {
+                return new WaterBucketAction(true);
+            }
+        }
         if (Configs.Print.PRINT_ICE_FOR_WATER.getBooleanValue()
+                && !creative
                 && BlockUtils.needsWater(ctx.requiredState)) {
             boolean canGenerateWater = mc.gameMode != null && !mc.gameMode.getPlayerMode().isCreative();
             switch (IceForWaterFlow.decideBuildAction(
@@ -96,14 +111,7 @@ public class PlacementGuide {
                     if (!BreakUtils.INSTANCE.inQueue(ctx.blockPos)) BreakUtils.INSTANCE.add(ctx.blockPos);
                     return new Action().setItem(Items.ICE);
                 }
-                case SKIP -> {
-                    // 创造模式：提示后跳过
-                    if (mc.gameMode != null && mc.gameMode.getPlayerMode().isCreative()
-                            && BlockUtils.needsWater(ctx.requiredState)) {
-                        MessageUtils.setOverlayMessage(I18n.ICE_CREATIVE_MODE.getName());
-                    }
-                    return null;
-                }
+                case SKIP -> { return null; }
             }
         }
         Action action;

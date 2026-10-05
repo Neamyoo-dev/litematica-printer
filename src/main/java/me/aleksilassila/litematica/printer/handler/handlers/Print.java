@@ -141,6 +141,7 @@ public class Print extends Module {
     protected void executeIteration(BlockPos blockPos, AtomicReference<Boolean> skipIteration) {
         placingIceForWater = false;
         if (Configs.Print.PRINT_ICE_FOR_WATER.getBooleanValue()
+                && !player.getAbilities().instabuild
                 && BlockUtils.needsWater(ctx.requiredState)) {
             boolean isWaitingHere = watingForWaterPos != null && watingForWaterPos.equals(blockPos);
             boolean isIce = ctx.currentState.getBlock() instanceof IceBlock;
@@ -264,7 +265,7 @@ public class Print extends Module {
             return;
         }
         Vec3 hitModifier = LitematicaUtils.usePrecisionPlacement(blockPos, ctx.requiredState);
-        if (hitModifier != null) {
+        if (hitModifier != null && !ActionManager.INSTANCE.useItem) {
             ActionManager.INSTANCE.hitModifier = hitModifier;
             ActionManager.INSTANCE.useProtocol = true;
         }

@@ -6,6 +6,9 @@ import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.mixin.extension.MultiPlayerGameModeExtension;
 import me.aleksilassila.litematica.printer.utils.BlockUtils;
 import me.aleksilassila.litematica.printer.utils.PacketUtils;
+import me.aleksilassila.litematica.printer.utils.InventoryUtils;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,6 +30,7 @@ public class ActionManager {
     public Vec3 hitModifier;
     public boolean useShift = false;
     public boolean useProtocol = false;
+    public boolean useItem = false;
     @Setter
     @Nullable
     public PlayerLook look;
@@ -93,9 +97,16 @@ public class ActionManager {
         }
         MultiPlayerGameModeExtension gameModeExtension = (MultiPlayerGameModeExtension) Reference.MINECRAFT.gameMode;
         if (gameModeExtension != null) {
-            boolean localPrediction = !Configs.Placement.PRINT_USE_PACKET.getBooleanValue();
-            BlockHitResult blockHitResult = new BlockHitResult(hitVec, side, target, false);
-            gameModeExtension.litematica_printer$useItemOn(localPrediction, InteractionHand.MAIN_HAND, blockHitResult);
+            if (useItem && look != null) {
+                PacketUtils.sendPacket(new ServerboundSetCarriedItemPacket(InventoryUtils.getSelectedSlot(player.getInventory())));
+                PlayerLook itemLook = look;
+                PacketUtils.sendPacket(sequence -> new ServerboundUseItemPacket(
+                        InteractionHand.MAIN_HAND, sequence, itemLook.yaw(), itemLook.pitch()));
+            } else {
+                boolean localPrediction = !Configs.Placement.PRINT_USE_PACKET.getBooleanValue();
+                BlockHitResult blockHitResult = new BlockHitResult(hitVec, side, target, false);
+                gameModeExtension.litematica_printer$useItemOn(localPrediction, InteractionHand.MAIN_HAND, blockHitResult);
+            }
         }
         if (useShift && !wasSneak) {
             setShift(player, false);
@@ -123,6 +134,7 @@ public class ActionManager {
         this.hitModifier = null;
         this.useShift = false;
         this.useProtocol = false;
+        this.useItem = false;
         this.needWaitModifyLook = false;
         this.actionRequiresWaitModifyLook = false;
         this.look = null;
