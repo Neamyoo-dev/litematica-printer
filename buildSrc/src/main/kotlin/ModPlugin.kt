@@ -69,6 +69,7 @@ abstract class ModPlugin : Plugin<Project> {
 
     private fun Project.configureJar() {
         tasks.withType<Jar>().configureEach {
+            archiveVersion.set(modArchiveVersion)
             from(rootProject.file("LICENSE.md")) {
                 rename { originalName ->
                     "${originalName}_${modArchivesBaseName}"

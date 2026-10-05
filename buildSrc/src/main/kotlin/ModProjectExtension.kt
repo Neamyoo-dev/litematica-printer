@@ -44,7 +44,15 @@ val Project.lombokVersion get() = propStr("lombok_version")
 val Project.javaVersion get() = JavaVersion.VERSION_25
 val Project.mixinJavaVersion get() = "JAVA_${javaVersion}"
 
-val Project.fullProjectVersion: String get() = getFullProjectVersion(mcVersion, modVersion)
+val Project.fullProjectVersion: String
+    get() = if (buildType == "release") modVersion else "$modVersion+$buildIdentity"
+
+val Project.modArchiveVersion: String
+    get() {
+        val minecraftVersion = mcVersion ?: throw GradleException("minecraft_version is required")
+        val releaseName = "$modVersion-mc$minecraftVersion"
+        return if (buildType == "release") releaseName else "$releaseName-$buildIdentity"
+    }
 
 private fun getCommitHash(workDir: File = File(".")): String? {
     return try {
@@ -76,23 +84,18 @@ private fun getCommitCountNumber(workDir: File = File(".")): Int? {
     }
 }
 
-val buildType: String? = when (modBuildTypeEnv) {
+val buildType: String = when (modBuildTypeEnv) {
     "snapshot"  -> "snapshot"
     "pr"        -> "pr"
     "release"   -> "release"
     else        -> "development"
 }
 
-private fun getFullProjectVersion(mcVersion: String?, modVersion: String): String {
-    val commitCount     = getCommitCountNumber()
-    val commitHash      = getCommitHash()
-    return if (buildType == "release") {
-        if (mcVersion == null)  modVersion
-        else                    "${modVersion}-mc${mcVersion}"
-    } else {
-        if (mcVersion == null)  "${modVersion}-${commitCount}-${commitHash}-${buildType}"
-        else                    "${modVersion}-mc${mcVersion}-${commitCount}-${commitHash}-${buildType}"
-    }
+private val buildIdentity: String by lazy {
+    val buildNumber = System.getenv("BUILD_ID")?.takeIf { it.matches(Regex("[0-9]+")) }
+        ?: getCommitCountNumber()?.toString() ?: "0"
+    val commitHash = getCommitHash() ?: "unknown"
+    "$buildType.$buildNumber.g$commitHash"
 }
 
 val Project.placeholderProps: Map<String, Any?>

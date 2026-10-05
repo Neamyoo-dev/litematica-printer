@@ -6,6 +6,11 @@ on:
         type: string
         required: false
         default: snapshot
+      build_ref:
+        description: Git ref to build; release builds use their release tag
+        type: string
+        required: false
+        default: ''
       target_subproject:
         description: Minecraft 26.2 subproject
         type: string
@@ -34,6 +39,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.build_ref }}
           fetch-depth: 0
           fetch-tags: true
 
