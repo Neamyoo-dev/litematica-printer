@@ -91,7 +91,6 @@ $RECYCLE.BIN/
 # AI 辅助开发工具/配置
 .github/copilot-instructions.md
 .trae/
-AGENTS.md
 *.factorypath
 /.sisyphus/
 .omo/
