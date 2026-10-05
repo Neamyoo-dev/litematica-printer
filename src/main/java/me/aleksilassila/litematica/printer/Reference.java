@@ -17,7 +17,7 @@ import java.util.Arrays;
 public class Reference {
     public static final Minecraft MINECRAFT = Minecraft.getInstance();
     public static final String MOD_ID = "litematica-printer";
-    public static final String MOD_NAME = "Litematica Printer";
+    public static final String MOD_NAME = "打印机四改";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     public static final Item[] COMPOSTABLE_ITEMS = Arrays.stream(ComposterBlock.COMPOSTABLES.keySet().toArray(ItemLike[]::new)).map(ItemLike::asItem).toArray(Item[]::new);
