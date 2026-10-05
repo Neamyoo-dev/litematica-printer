@@ -67,7 +67,8 @@ public abstract class MixinMultiPlayerGameMode implements MultiPlayerGameModeExt
     @Override
     public InteractionResult litematica_printer$useItemOn(boolean localPrediction, InteractionHand hand, BlockHitResult blockHit) {
         if (localPrediction) {
-            return useItemOn(minecraft.player, hand, blockHit);
+            return EasyPlaceCompatibility.runPrinterPlacement(
+                    () -> useItemOn(minecraft.player, hand, blockHit));
         }
         this.ensureHasSentCarriedItem();
         if (!this.minecraft.level.getWorldBorder().isWithinBounds(blockHit.getBlockPos())) {
