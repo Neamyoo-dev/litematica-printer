@@ -190,6 +190,8 @@ public abstract class MixinMultiPlayerGameMode implements MultiPlayerGameModeExt
         }
 
         if (player.getAbilities().instabuild && level.getWorldBorder().isWithinBounds(blockPos)) {
+            // A fill action may have just selected another hotbar slot. Sync it before destroying.
+            ensureHasSentCarriedItem();
             PacketUtils.sendPacket(sequence -> {
                 if (localPrediction) destroyBlock(blockPos);
                 return litematica_printer$GetServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, blockPos, direction, sequence);

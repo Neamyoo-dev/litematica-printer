@@ -548,6 +548,11 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .setVisible(isHandheld)
                 .build();
 
+        // 先破坏选区内的阻挡方块，再填充；创造模式直接秒挖
+        public static final ConfigBoolean FILL_DESTROY_BLOCKS = booleanValue("fillDestroyBlocks")
+                .defaultValue(false)
+                .build();
+
         // 模式朝向
         public static final ConfigOptionList FILL_BLOCK_FACING = optionList("fillModeFacing")
                 .defaultValue(FillModeFacingType.NONE)
@@ -559,6 +564,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 FILL_BLOCK_MODE,
                 FILL_BLOCK_LIST,
                 FILL_HANDHELD_BLACKLIST,
+                FILL_DESTROY_BLOCKS,
                 FILL_BLOCK_FACING
         );
     }

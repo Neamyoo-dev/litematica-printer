@@ -84,6 +84,8 @@
   "litematica-printer.config.fillBlockModeType.handheld": "Held Item",
   "litematica-printer.config.fillEnabled": "Enable Filling",
   "litematica-printer.config.fillEnabled.desc": "Toggle for the filling module.",
+  "litematica-printer.config.fillDestroyBlocks": "Destroy Blocking Blocks",
+  "litematica-printer.config.fillDestroyBlocks.desc": "Break obstacles inside the selection before filling.\nCreative mode instantly breaks obsidian and other breakable blocks; survival uses normal mining speed.\nExisting blocks from the fill list are kept. Requires a block item and available fill materials.\nRespects working range and block breaking restrictions. Disabled by default.",
   "litematica-printer.config.fillModeFacing": "Fill Block Facing",
   "litematica-printer.config.fillModeFacing.desc": "Facing settings when filling blocks. For example, placing upper slabs or lower slabs.",
   "litematica-printer.config.fillModeFacing.down": "Down",

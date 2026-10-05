@@ -84,6 +84,8 @@
   "litematica-printer.config.fillBlockModeType.handheld": "手持物品",
   "litematica-printer.config.fillEnabled": "启用填充",
   "litematica-printer.config.fillEnabled.desc": "控制填充模块的开关。",
+  "litematica-printer.config.fillDestroyBlocks": "破坏阻挡方块",
+  "litematica-printer.config.fillDestroyBlocks.desc": "填充时先破坏选区内的阻挡方块，再放入填充方块。\n创造模式瞬间破坏黑曜石等可破坏方块；生存模式按正常挖掘速度处理。\n已有填充列表中的方块种类会保留；仅使用方块物品且有可用材料时执行。\n遵循工作范围和破坏限制名单。默认关闭。",
   "litematica-printer.config.fillModeFacing": "填充方块朝向",
   "litematica-printer.config.fillModeFacing.desc": "填充方块时的朝向设置。例如放置上台阶或下台阶。",
   "litematica-printer.config.fillModeFacing.down": "下",

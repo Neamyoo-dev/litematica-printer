@@ -84,6 +84,8 @@
   "litematica-printer.config.fillBlockModeType.handheld": "手持",
   "litematica-printer.config.fillEnabled": "啟填充",
   "litematica-printer.config.fillEnabled.desc": "控填充模組之開關。",
+  "litematica-printer.config.fillDestroyBlocks": "毀障而填",
+  "litematica-printer.config.fillDestroyBlocks.desc": "先毀選域之障，後填所用之方。\n創造之模，黑曜石等可毀之方立破；生存之模，循常速而掘。\n已有填列之方則留之；須持方物，且材料可取。\n遵工作之距與毀方禁列。初設為關。",
   "litematica-printer.config.fillModeFacing": "填方面",
   "litematica-printer.config.fillModeFacing.desc": "填方時之向，如上半磚下半磚。",
   "litematica-printer.config.fillModeFacing.down": "下",

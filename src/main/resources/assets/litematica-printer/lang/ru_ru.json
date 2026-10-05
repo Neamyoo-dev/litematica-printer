@@ -84,6 +84,8 @@
   "litematica-printer.config.fillBlockModeType.handheld": "Предмет в руке",
   "litematica-printer.config.fillEnabled": "Включить заполнение",
   "litematica-printer.config.fillEnabled.desc": "Переключатель модуля заполнения.",
+  "litematica-printer.config.fillDestroyBlocks": "Разрушать мешающие блоки",
+  "litematica-printer.config.fillDestroyBlocks.desc": "Разрушать препятствия в выделенной области перед заполнением.\nВ творческом режиме обсидиан и другие разрушаемые блоки ломаются мгновенно; в выживании действует обычная скорость добычи.\nБлоки из списка заполнения сохраняются. Нужен предмет блока и доступный материал.\nУчитываются рабочая дистанция и ограничения разрушения. По умолчанию выключено.",
   "litematica-printer.config.fillModeFacing": "Направление блока при заполнении",
   "litematica-printer.config.fillModeFacing.desc": "Настройки ориентации при заполнении блоков. Например, размещение верхних или нижних плит.",
   "litematica-printer.config.fillModeFacing.down": "Вниз",
