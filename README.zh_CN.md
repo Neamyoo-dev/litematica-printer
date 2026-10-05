@@ -3,6 +3,7 @@
 [English](README.md) | **简体中文**
 
 ![Minecraft](https://img.shields.io/badge/Minecraft-26.2-blue)
+![Version](https://img.shields.io/badge/version-1.4.0--beta.1-orange)
 
 为 [Litematica](https://modrinth.com/mod/litematica) 投影添加自动建造功能的 Minecraft Fabric 模组。本项目仅支持并更新 **Minecraft 26.2**，默认开发分支为 `ver/26.2`。
 
@@ -88,6 +89,33 @@ Windows 使用：
 ```
 
 产物位于 `versions/26.2/build/libs/`，将其中的普通模组 jar 放入游戏的 `mods` 目录。构建仅生成 26.2 版本，不再生成多版本整合包。
+
+构建不带开发后缀的发布安装包：
+
+```bash
+BUILD_TYPE=release ./gradlew :26.2:build
+```
+
+Windows 使用：
+
+```powershell
+$env:BUILD_TYPE = "release"
+.\gradlew.bat :26.2:build
+```
+
+## 版本命名
+
+当前模组版本为 **1.4.0-beta.1**。模组版本遵循 [SemVer](https://semver.org/)，Minecraft 兼容版本单独管理。
+
+| 项目 | 名称 |
+| --- | --- |
+| 模组版本 | `1.4.0-beta.1` |
+| 发布标签 | `v1.4.0-beta.1` |
+| 发布安装包 | `litematica-printer-1.4.0-beta.1-mc26.2.jar` |
+
+开发和快照构建会在模组版本中附加 `+<channel>.<build-id>.g<commit>`，并在 jar 文件名中附加 `-<channel>.<build-id>.g<commit>`。构建元数据不影响版本先后顺序。构建编号优先使用 `BUILD_ID`，未提供时使用 Git 提交数量。
+
+发布流程会构建指定标签，校验标签与 `v<mod_version>` 一致，并正确标记测试版。测试版用户可以收到后续测试版或正式版更新；正式版用户仅接收正式版更新。本地构建不会创建 GitHub 标签或 Release。
 
 ## 贡献
 

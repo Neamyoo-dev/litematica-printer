@@ -3,6 +3,7 @@
 **English** | [简体中文](README.zh_CN.md)
 
 ![Minecraft](https://img.shields.io/badge/Minecraft-26.2-blue)
+![Version](https://img.shields.io/badge/version-1.4.0--beta.1-orange)
 
 A Minecraft Fabric mod that adds automatic schematic building to [Litematica](https://modrinth.com/mod/litematica). This project supports and receives updates for **Minecraft 26.2 only**. The default development branch is `ver/26.2`.
 
@@ -88,6 +89,33 @@ On Windows:
 ```
 
 Artifacts are written to `versions/26.2/build/libs/`. Put the regular mod jar in your game's `mods` directory. The build produces only the 26.2 mod, with no multi-version wrapper.
+
+To build the release jar without a development suffix:
+
+```bash
+BUILD_TYPE=release ./gradlew :26.2:build
+```
+
+On Windows:
+
+```powershell
+$env:BUILD_TYPE = "release"
+.\gradlew.bat :26.2:build
+```
+
+## Versioning
+
+The current mod version is **1.4.0-beta.1**. Mod versions follow [SemVer](https://semver.org/); Minecraft compatibility is tracked separately.
+
+| Item | Name |
+| --- | --- |
+| Mod version | `1.4.0-beta.1` |
+| Release tag | `v1.4.0-beta.1` |
+| Release jar | `litematica-printer-1.4.0-beta.1-mc26.2.jar` |
+
+Development and snapshot builds add `+<channel>.<build-id>.g<commit>` to the mod version and `-<channel>.<build-id>.g<commit>` to the jar filename. Build metadata does not affect version precedence. The build ID uses `BUILD_ID` when provided, otherwise the Git commit count.
+
+The release workflow builds the selected tag, checks that it matches `v<mod_version>`, and marks prereleases accordingly. Beta users can receive newer prerelease or stable versions; stable users receive stable versions only. Building locally does not create a GitHub tag or release.
 
 ## Contributing
 

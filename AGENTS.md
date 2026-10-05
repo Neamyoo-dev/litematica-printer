@@ -41,4 +41,5 @@ These instructions apply to the entire repository.
 
 - The mod version is configured in `gradle.properties`; generated versions and jar names are defined in `buildSrc/src/main/kotlin/ModProjectExtension.kt` and the Gradle build files.
 - Distinguish the mod version, Minecraft compatibility, release tags, and build identifiers.
+- Release mod metadata uses the base SemVer from `mod_version`; tags use `v<mod_version>` and jars use `litematica-printer-<mod_version>-mc26.2.jar`. Non-release builds append channel, build ID, and commit identifiers as build metadata and filename suffixes.
 - Treat version naming proposals as proposals until adopted; update the build, release workflows, version comparison, and both READMEs together when implementing a new scheme.
